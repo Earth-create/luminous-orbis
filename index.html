@@ -306,6 +306,19 @@ window.addEventListener("error",function(e){var b=document.getElementById("err")
   <button class="btn" id="gfxYes" type="button" style="padding:6px 12px">下げる</button>
   <button class="btn" id="gfxNo" type="button" style="padding:6px 12px">このまま</button>
 </div>
+<!-- save code -->
+<div class="screen" id="codeModal" hidden style="z-index:70">
+  <div class="card">
+    <h2 id="codeTitle">セーブコード</h2>
+    <p id="codeHelp"></p>
+    <textarea id="codeText" rows="5" spellcheck="false" autocomplete="off" style="width:100%;box-sizing:border-box;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;background:rgba(0,0,0,.35);color:#eadfca;border:1px solid rgba(214,180,110,.45);border-radius:8px;padding:8px;word-break:break-all;resize:vertical"></textarea>
+    <div class="note" id="codeMsg" aria-live="polite"></div>
+    <div class="actions">
+      <button class="btn" id="codeClose" type="button">閉じる</button>
+      <button class="btn gold" id="codeAct" type="button">コピー</button>
+    </div>
+  </div>
+</div>
 <!-- menu -->
 <div class="screen" id="menuModal" hidden>
   <div class="card">
@@ -313,6 +326,7 @@ window.addEventListener("error",function(e){var b=document.getElementById("err")
     <p id="menuInfo"></p>
     <div class="actions" style="justify-content:stretch;flex-direction:column">
       <button class="btn" id="mSave" type="button">セーブする</button>
+      <button class="btn" id="mCode" type="button">進行状況をコピー（セーブコード）</button>
       <button class="btn" id="mFps" type="button">フレームレート：60fps</button>
       <button class="btn" id="mGfx" type="button">画質：高</button>
       <button class="btn" id="mTitle" type="button">セーブしてタイトルへ</button>
@@ -2615,6 +2629,27 @@ $("btnStart").addEventListener("click",function(){renderSlots();setState("saves"
 $("savesBack").addEventListener("click",goTitle);
 var confirmDel=-1;
 function mkBtn(label,cls,fn){var b=document.createElement("button");b.type="button";b.className=cls;b.textContent=label;b.addEventListener("click",fn);return b;}
+/* ---------- save code: the progress as one line of text (to show Claude or move to another device) ---------- */
+function encodeSave(d){var j=JSON.stringify(d),b=new TextEncoder().encode(j),bin="";for(var i=0;i<b.length;i++)bin+=String.fromCharCode(b[i]);
+  return"LO1-"+btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");}
+function decodeSave(code){try{code=String(code||"").replace(/\s+/g,"");if(code.indexOf("LO1-")!==0)return null;var t=code.slice(4).replace(/-/g,"+").replace(/_/g,"/");while(t.length%4)t+="=";
+  var bin=atob(t),u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);var d=JSON.parse(new TextDecoder().decode(u));
+  if(!d||typeof d!=="object"||!JOBS[d.job]||typeof d.lv!=="number"||!d.app||typeof d.app!=="object")return null;return d;}catch(e){return null;}}
+var codeMode=null,codeSlot=-1;
+function openCode(mode,slot){codeMode=mode;codeSlot=slot;var t=$("codeText");$("codeMsg").textContent="";
+  if(mode==="export"){saveGame(true);t.value=encodeSave(memSaves[slotIndex]);t.readOnly=true;$("codeTitle").textContent="セーブコード";
+    $("codeHelp").textContent="この文字列をコピーして、Claudeとのチャットに貼ると進み具合を見てもらえます。別の端末で「コードから読み込む」に使うこともできます。";$("codeAct").textContent="コピー";}
+  else{t.value="";t.readOnly=false;$("codeTitle").textContent="コードから読み込む（SLOT "+(slot+1)+"）";
+    $("codeHelp").textContent="「LO1-」で始まるセーブコードを貼り付けてください。";$("codeAct").textContent="読み込む";}
+  $("codeModal").hidden=false;if(mode==="import")setTimeout(function(){t.focus();},50);}
+$("codeClose").addEventListener("click",function(){$("codeModal").hidden=true;});
+$("codeAct").addEventListener("click",function(){var t=$("codeText"),msg=$("codeMsg");
+  if(codeMode==="export"){var done=function(){msg.textContent="コピーしました";},fb=function(){t.focus();t.select();try{document.execCommand("copy");msg.textContent="コピーしました";}catch(e){msg.textContent="文字列を長押ししてコピーしてください";}};
+    try{if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t.value).then(done,fb);else fb();}catch(e){fb();}}
+  else{var d=decodeSave(t.value);if(!d){msg.textContent="コードが正しくないようです。最初から最後まで全部貼り付けられているか確認してください。";return;}
+    d.savedAt=Date.now();memSaves[codeSlot]=d;var ok=writeSaves(memSaves);$("codeModal").hidden=true;renderSlots();
+    var ts=$("toast");ts.textContent=ok?"読み込みました":"読み込みましたが、このブラウザでは保存できません";ts.style.opacity=1;setTimeout(function(){ts.style.opacity=0;},1800);}});
+$("mCode").addEventListener("click",function(){openCode("export");});
 function renderSlots(){
   var fresh=readSaves();if(fresh)memSaves=fresh;
   $("storageNote").hidden=storageOK;
@@ -2638,6 +2673,7 @@ function renderSlots(){
       }
     }else{
       var em3=document.createElement("div");em3.className="empty";em3.textContent="空きスロット";el.appendChild(em3);
+      acts.appendChild(mkBtn("コードから読み込む","btn",function(){openCode("import",i);}));
       acts.appendChild(mkBtn("新しく始める","btn gold",function(){newGame(i);}));
     }
     el.appendChild(acts);box.appendChild(el);
