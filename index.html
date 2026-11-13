@@ -301,6 +301,11 @@ window.addEventListener("error",function(e){var b=document.getElementById("err")
   </div>
 </div>
 
+<div id="gfxAsk" hidden style="position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 70px);transform:translateX(-50%);z-index:60;background:rgba(14,12,10,.92);border:1px solid rgba(214,180,110,.5);border-radius:10px;padding:10px 14px;color:#eadfca;font-size:14px;display:flex;gap:10px;align-items:center;max-width:calc(100vw - 32px);flex-wrap:wrap">
+  <span>動きが重いようです。画質を下げますか？</span>
+  <button class="btn" id="gfxYes" type="button" style="padding:6px 12px">下げる</button>
+  <button class="btn" id="gfxNo" type="button" style="padding:6px 12px">このまま</button>
+</div>
 <!-- menu -->
 <div class="screen" id="menuModal" hidden>
   <div class="card">
@@ -309,6 +314,7 @@ window.addEventListener("error",function(e){var b=document.getElementById("err")
     <div class="actions" style="justify-content:stretch;flex-direction:column">
       <button class="btn" id="mSave" type="button">セーブする</button>
       <button class="btn" id="mFps" type="button">フレームレート：60fps</button>
+      <button class="btn" id="mGfx" type="button">画質：高</button>
       <button class="btn" id="mTitle" type="button">セーブしてタイトルへ</button>
       <button class="btn" id="mClose" type="button">閉じる</button>
     </div>
@@ -398,7 +404,7 @@ function sceneryOK(x,z){return Math.hypot(x,z)>11&&distTown(x,z)>31&&roadDist(x,
 
 /* ---------- renderer, sky, light ---------- */
 var renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setPixelRatio(Math.min(devicePixelRatio,isTouch?1.25:2));
 renderer.setSize(innerWidth,innerHeight);
 renderer.outputEncoding=THREE.sRGBEncoding;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
@@ -918,7 +924,7 @@ grass.frustumCulled=false;grass.receiveShadow=true;
     grass.setMatrixAt(placed,dummy.matrix);
     var dry=ss(.56,.7,fbm(x*.035+9,z*.035+3))*.5;gc.setRGB(lerp(.8+R()*.4,1.5,dry),lerp(.8+R()*.35,1.18,dry),lerp(.6+R()*.4,.48,dry));if(R()<.08)gc.setRGB(1.5,1.2,.5);
     grass.setColorAt(placed,gc);placed++;}
-  grass.count=placed;})();
+  grass.count=placed;grass.userData.full=placed;})();
 scene.add(grass);
 
 /* ---------- scanned props (Poly Haven) placed once they load ---------- */
@@ -2873,7 +2879,7 @@ function updateEnemies(DT){
     if(e.dead){e.deadT+=dt;m.scale.setScalar(Math.max(.01,e.base*(1-e.deadT*1.6)));m.position.y-=dt*.8;if(e.deadT>.6&&!e.remove){e.remove=true;disposeEnemy(e);}return;}
     var px=m.position.x,pz=m.position.z;
     var dx=player.position.x-px,dz=player.position.z-pz,dist=Math.hypot(dx,dz);
-    var farE=dist>35;setLOD(m,farE,null);
+    var farE=dist>LOD_ENEMY;setLOD(m,farE,null);
     if(farE&&e.state==="wander"&&e.hurtT<=0){e.acc=(e.acc||0)+DT;if(e.acc<(dist>70?.3:.12)){e.bar.visible=false;return;}dt=e.acc*(e.slowT>0?.45:1);}
     e.acc=0;
     var toP=Math.atan2(dx,dz);e.t+=dt;if(e.aggroT>0)e.aggroT-=dt;
@@ -2954,6 +2960,7 @@ function updateEnemies(DT){
   if(showBoss){$("bossName").textContent=boss.T.name;$("bossFill").style.width=(Math.max(0,boss.hp)/boss.maxHp*100)+"%";}
 }
 /* distance level of detail: far away actors drop shadows and tiny face parts */
+var LOD_NPC=28,LOD_ENEMY=35;
 function setLOD(obj,far,details){if(obj.userData.lodFar===far)return;obj.userData.lodFar=far;
   obj.traverse(function(o){if(o.isMesh){if(o.userData.cs0===undefined)o.userData.cs0=o.castShadow;o.castShadow=far?false:o.userData.cs0;}});
   if(details)details.forEach(function(d){d.visible=!far;});}
@@ -2964,7 +2971,7 @@ function updateNPCs(dt){
     var dx=player.position.x-g.position.x,dz=player.position.z-g.position.z,d=Math.hypot(dx,dz);
     g.visible=state!=="play"||d<60;
     if(d>70&&state==="play")return;
-    var far=state==="play"&&d>28;setLOD(A2.root,far,A2.details);
+    var far=state==="play"&&d>LOD_NPC;setLOD(A2.root,far,A2.details);
     if(far){n.acc=(n.acc||0)+dt;if(n.acc<.15)return;dt=n.acc;}
     n.acc=0;
     poseRest(A2);
@@ -3054,14 +3061,36 @@ if(THREE.EffectComposer&&THREE.UnrealBloomPass&&THREE.GammaCorrectionShader){
         "vec2 q=vUv-.5;c*=1.-dot(q,q)*.8;gl_FragColor=vec4(clamp(c,0.,1.),1.);}"].join("\n")}));
   }catch(err){composer=null;}
 }
-function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();applyViewOffset();var pr=Math.min(devicePixelRatio,2);renderer.setPixelRatio(pr);renderer.setSize(innerWidth,innerHeight);if(composer){composer.setPixelRatio(pr);composer.setSize(innerWidth,innerHeight);}}
+/* ---------- graphics quality (0 low, 1 mid, 2 high) ---------- */
+var GFX_NAMES=["低","中","高"],gfx=isTouch?1:2;
+try{var gs=localStorage.getItem("lo-gfx");if(gs!==null&&/^[012]$/.test(gs))gfx=+gs;}catch(e){}
+function gfxPR(){return gfx===2?Math.min(devicePixelRatio,2):gfx===1?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,1)*.8;}
+function applyGfx(){
+  if(grass.userData.full)grass.count=Math.floor(grass.userData.full*(gfx===2?1:gfx===1?.5:.22));
+  var ms=gfx===2?2048:1024;sun.castShadow=gfx>0;
+  if(sun.shadow.mapSize.x!==ms){sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}
+  if(composer&&composer.passes[1])composer.passes[1].enabled=gfx>0;
+  camera.far=gfx===2?800:gfx===1?420:260;camera.updateProjectionMatrix();
+  LOD_NPC=gfx===2?28:gfx===1?22:15;LOD_ENEMY=gfx===2?35:gfx===1?28:20;
+  var b=document.getElementById("mGfx");if(b)b.textContent="画質："+GFX_NAMES[gfx]+(gfx===1?"（標準）":gfx===0?"（軽量）":"（高画質）");
+  resize();}
+function setGfx(v){gfx=clamp(v,0,2);try{localStorage.setItem("lo-gfx",String(gfx));}catch(e){}applyGfx();}
+$("mGfx").addEventListener("click",function(){setGfx(gfx===0?2:gfx-1);});
+/* if the field keeps stuttering, offer once to lower the quality */
+var perfT=0,perfN=0,perfAsked=false;
+function perfWatch(raw){if(perfAsked||gfx===0||state!=="play"||paused)return;perfT+=raw;perfN++;
+  if(perfT>6){var fps=perfN/perfT;perfT=0;perfN=0;if(fps<24){perfAsked=true;$("gfxAsk").hidden=false;}}}
+$("gfxYes").addEventListener("click",function(){$("gfxAsk").hidden=true;setGfx(gfx-1);});
+$("gfxNo").addEventListener("click",function(){$("gfxAsk").hidden=true;});
+function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();applyViewOffset();var pr=gfxPR();renderer.setPixelRatio(pr);renderer.setSize(innerWidth,innerHeight);if(composer){composer.setPixelRatio(pr);composer.setSize(innerWidth,innerHeight);}}
 addEventListener("resize",resize);
+applyGfx();
 document.addEventListener("visibilitychange",function(){if(document.hidden&&state==="play")saveGame(true);});
 function loop(now){
   requestAnimationFrame(loop);
   if(document.hidden)return;
   if(fpsCap===30&&now){if(now-lastFrameT<1000/30-3)return;lastFrameT=now;}
-  var raw=Math.min(clock.getDelta(),.05),dt=raw;
+  var raw=Math.min(clock.getDelta(),.05),dt=raw;perfWatch(raw);
   if(slowmo>0){slowmo-=raw;dt=raw*.3;}
   if(hitStop>0){hitStop-=raw;dt=raw*.1;}
   if(shake>0)shake=Math.max(0,shake-raw*.8);
