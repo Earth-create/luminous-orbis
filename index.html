@@ -332,6 +332,7 @@ window.addEventListener("error",function(e){var b=document.getElementById("err")
       <button class="btn" id="mCode" type="button">進行状況をコピー（セーブコード）</button>
       <button class="btn" id="mFps" type="button">フレームレート：60fps</button>
       <button class="btn" id="mGfx" type="button">画質：高</button>
+      <button class="btn" id="mDyn" type="button">自動解像度：オン</button>
       <button class="btn" id="mTitle" type="button">セーブしてタイトルへ</button>
       <button class="btn" id="mClose" type="button">閉じる</button>
     </div>
@@ -725,6 +726,19 @@ function place(list,geo,x,y,z,rx,ry,rz,sx,sy,sz,color){
   if(color){var n=g.attributes.position.count,arr=new Float32Array(n*3);for(var k=0;k<n;k++){arr[k*3]=color.r;arr[k*3+1]=color.g;arr[k*3+2]=color.b;}g.setAttribute("color",new THREE.BufferAttribute(arr,3));}
   list.push(g);
 }
+/* ---------- visibility: split big batches into map cells so off-screen / far parts are skipped ---------- */
+var CULL=[],_frus=new THREE.Frustum(),_pm=new THREE.Matrix4(),_sph=new THREE.Sphere(),DRAW_DIST=240,GRASS_DIST=60,SMALL_DIST=110;
+function cullAdd(m,x,y,z,r,kind){CULL.push({m:m,c:new THREE.Vector3(x,y,z),r:r,kind:kind});}
+function updateCull(){
+  camera.updateMatrixWorld();_pm.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);_frus.setFromProjectionMatrix(_pm);
+  var px=camera.position.x,pz=camera.position.z;
+  for(var i=0;i<CULL.length;i++){var e=CULL[i],d=Math.hypot(e.c.x-px,e.c.z-pz)-e.r;
+    if(e.kind==="big"){e.m.visible=d<DRAW_DIST;continue;}
+    var lim=e.kind==="grass"?GRASS_DIST:SMALL_DIST;e.m.visible=d<lim&&_frus.intersectsSphere(_sph.set(e.c,e.r+6));}}
+function mergedC(list,mat,cast,recv,cell){cell=cell||28;if(!list.length)return;var cells={},v=new THREE.Vector3();
+  list.forEach(function(g){g.computeBoundingBox();g.boundingBox.getCenter(v);var k=Math.floor(v.x/cell)+","+Math.floor(v.z/cell);(cells[k]=cells[k]||[]).push(g);});
+  Object.keys(cells).forEach(function(k){var g=THREE.BufferGeometryUtils.mergeBufferGeometries(cells[k]);g.computeBoundingSphere();var m=new THREE.Mesh(g,mat);m.castShadow=!!cast;m.receiveShadow=!!recv;scene.add(m);
+    var bs=g.boundingSphere;cullAdd(m,bs.center.x,bs.center.y,bs.center.z,bs.radius,"big");});}
 function merged(list,mat,cast,recv){
   if(!list.length)return null;
   var g=THREE.BufferGeometryUtils.mergeBufferGeometries(list);var m=new THREE.Mesh(g,mat);m.castShadow=!!cast;m.receiveShadow=!!recv;scene.add(m);return m;
@@ -1035,15 +1049,15 @@ for(i=0;i<40;i++){var ma=i/40*Math.PI*2+R()*.2,md=170+R()*50,mh=24+R()*38,mr=34+
   mg.computeVertexNormals();place(mts,mg,Math.cos(ma)*md,mh/2-6,Math.sin(ma)*md);}
 
 var wallMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.9});
-merged(stones,stoneMat,true,true);merged(walls,wallMat,true,true);merged(rocks,rockMat,true,true);merged(trunks,trunkMat,true,true);merged(leaves,leafMat,true,true);merged(cards,cardMat,true,true);
+mergedC(stones,stoneMat,true,true);mergedC(walls,wallMat,true,true);mergedC(rocks,rockMat,true,true);mergedC(trunks,trunkMat,true,true);mergedC(leaves,leafMat,true,true);mergedC(cards,cardMat,true,true);
 triplanar(stoneMat,TX.ruin,.42,0xd8d2c8);triplanar(wallMat,TX.wall,.3,0xe0d8cc);triplanar(rockMat,TX.rock,.28,0xc0bab0);
 triplanar(plasterMat,TX.dry,.6,0xf6eee0,.3);triplanar(roofMat,TX.roof,.5,0xc8a090);triplanar(timberMat,TX.wood,.7,0x6a5440);triplanar(mtMat,TX.rock,.035,0x8c8a86);
 trunkMat.color.setHex(0xb4a494);trunkMat.map=TX.bark;trunkMat.normalMap=TX.barkN;trunkMat.needsUpdate=true;
 var castleMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.9}),castleRoofMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.75});
 triplanar(castleMat,TX.ruin,.36,0xf2ece0);triplanar(castleRoofMat,TX.roof,.5,0x7d8ea0);
-merged(cstone,castleMat,true,true);merged(croofs,castleRoofMat,true,true);
-merged(plaster,plasterMat,true,true);merged(timber,timberMat,true,true);merged(roofs,roofMat,true,true);merged(wins,windowMat,false,false);
-merged(irons,ironMat,true,false);merged(lanterns,lanternMat,false,false);merged(cloths,clothMatW,true,true);merged(mts,mtMat,false,false);
+mergedC(cstone,castleMat,true,true);mergedC(croofs,castleRoofMat,true,true);
+mergedC(plaster,plasterMat,true,true);mergedC(timber,timberMat,true,true);mergedC(roofs,roofMat,true,true);mergedC(wins,windowMat,false,false);
+mergedC(irons,ironMat,true,false);mergedC(lanterns,lanternMat,false,false);mergedC(cloths,clothMatW,true,true);merged(mts,mtMat,false,false);
 
 /* grass */
 var GRASS_MAX=isTouch?45000:90000;
@@ -1073,7 +1087,13 @@ grass.frustumCulled=false;grass.receiveShadow=true;
     var dry=ss(.56,.7,fbm(x*.035+9,z*.035+3))*.5;gc.setRGB(lerp(.8+R()*.4,1.5,dry),lerp(.8+R()*.35,1.18,dry),lerp(.6+R()*.4,.48,dry));if(R()<.08)gc.setRGB(1.5,1.2,.5);
     grass.setColorAt(placed,gc);placed++;}
   grass.count=placed;grass.userData.full=placed;})();
-scene.add(grass);
+var grassCells=[];
+(function(){var n=grass.userData.full,cells={},mtx=new THREE.Matrix4(),col=new THREE.Color(),CS=20;
+  for(var i=0;i<n;i++){grass.getMatrixAt(i,mtx);var x=mtx.elements[12],z=mtx.elements[14],k=Math.floor(x/CS)+","+Math.floor(z/CS);(cells[k]=cells[k]||[]).push(i);}
+  Object.keys(cells).forEach(function(k){var L=cells[k],im=new THREE.InstancedMesh(bladeGeo,grassMat,L.length),cx=0,cz=0,cy=0;
+    L.forEach(function(idx,j){grass.getMatrixAt(idx,mtx);im.setMatrixAt(j,mtx);grass.getColorAt(idx,col);im.setColorAt(j,col);cx+=mtx.elements[12];cy+=mtx.elements[13];cz+=mtx.elements[14];});
+    im.frustumCulled=false;im.receiveShadow=true;im.userData.full=L.length;scene.add(im);grassCells.push(im);cullAdd(im,cx/L.length,cy/L.length,cz/L.length,CS*.75,"grass");});
+  grass.dispose&&grass.dispose();})();
 
 /* ---------- scanned props (Poly Haven) placed once they load ---------- */
 var R2=rng(777);
@@ -1082,9 +1102,12 @@ function partsOf(sc){var out=[];sc.traverse(function(o){if(o.isMesh){var geo=o.g
 function spot2(cx,cz,rad,clear,minR,ok){for(var t=0;t<60;t++){var a=R2()*Math.PI*2,d=(minR||0)+Math.sqrt(R2())*(rad-(minR||0)),x=cx+Math.cos(a)*d,z=cz+Math.sin(a)*d;
   if(sceneryOK(x,z)&&freeAt(x,z,clear)&&(!ok||ok(x,z)))return{x:x,z:z};}return null;}
 function scatter(parts,places,shadow){var by={};places.forEach(function(p){(by[p.part]=by[p.part]||[]).push(p);});
-  Object.keys(by).forEach(function(k){var pt=parts[k],L=by[k],im=new THREE.InstancedMesh(pt.geo,pt.mat,L.length);
-    L.forEach(function(p,i){dummy.position.set(p.x,H(p.x,p.z)-(p.sink||0)*p.s*pt.size.y,p.z);dummy.rotation.set(p.rx||0,p.ry||0,p.rz||0);dummy.scale.setScalar(p.s);dummy.updateMatrix();im.setMatrixAt(i,dummy.matrix);});
-    im.castShadow=shadow!==false;im.receiveShadow=true;scene.add(im);});}
+  Object.keys(by).forEach(function(k){var pt=parts[k],cells={};
+    by[k].forEach(function(p){var ck=Math.floor(p.x/30)+","+Math.floor(p.z/30);(cells[ck]=cells[ck]||[]).push(p);});
+    Object.keys(cells).forEach(function(ck){var L=cells[ck],im=new THREE.InstancedMesh(pt.geo,pt.mat,L.length),cx=0,cz=0,cy=0,rad=0;
+      L.forEach(function(p,i){var y=H(p.x,p.z);dummy.position.set(p.x,y-(p.sink||0)*p.s*pt.size.y,p.z);dummy.rotation.set(p.rx||0,p.ry||0,p.rz||0);dummy.scale.setScalar(p.s);dummy.updateMatrix();im.setMatrixAt(i,dummy.matrix);cx+=p.x;cz+=p.z;cy+=y;});
+      cx/=L.length;cz/=L.length;cy/=L.length;L.forEach(function(p){rad=Math.max(rad,Math.hypot(p.x-cx,p.z-cz)+Math.max(pt.size.x,pt.size.y,pt.size.z)*p.s);});
+      im.frustumCulled=false;im.castShadow=shadow!==false;im.receiveShadow=true;scene.add(im);cullAdd(im,cx,cy,cz,rad,"small");});});}
 function placeSet(parts,n,area,sMin,sMax,opts){opts=opts||{};var pl=[];
   for(var i=0;i<n;i++){var sp=spot2(area[0],area[1],area[2],opts.clear||1,area[3]||0,opts.ok);if(!sp)continue;var k=Math.floor(R2()*parts.length),s=sMin+R2()*(sMax-sMin);
     pl.push({x:sp.x,z:sp.z,s:s,ry:R2()*6.28,part:k,sink:opts.sink||0,rx:opts.tilt?(R2()-.5)*opts.tilt:0,rz:opts.tilt?(R2()-.5)*opts.tilt:0});
@@ -3268,7 +3291,7 @@ function render(dt){
   var fp=player.position;
   sun.position.set(fp.x+sunDir.x*90,fp.y+sunDir.y*90+20,fp.z+sunDir.z*90);
   sun.target.position.copy(fp);
-  var scn=state==="play"?scene:stage;
+  var scn=state==="play"?scene:stage;if(scn===scene)updateCull();
   if(composer){renderPass.scene=scn;composer.render();}else renderer.render(scn,camera);
   pops.forEach(function(p){vtmp.copy(p.p);vtmp.y+=p.t*1.2;vtmp.project(camera);
     p.el.style.left=((vtmp.x+1)/2*innerWidth)+"px";p.el.style.top=((1-vtmp.y)/2*innerHeight)+"px";p.el.style.opacity=Math.max(0,1-p.t/.9);});
@@ -3278,7 +3301,7 @@ if(THREE.EffectComposer&&THREE.UnrealBloomPass&&THREE.GammaCorrectionShader){
   try{
     composer=new THREE.EffectComposer(renderer);
     renderPass=new THREE.RenderPass(scene,camera);composer.addPass(renderPass);
-    composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.55,.5,.88));
+    var bloomP=new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.55,.5,.88),bloomSet=bloomP.setSize.bind(bloomP);bloomP.setSize=function(w,h){bloomSet(Math.max(2,Math.round(w/2)),Math.max(2,Math.round(h/2)));};composer.addPass(bloomP);
     composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
     composer.addPass(new THREE.ShaderPass({uniforms:{tDiffuse:{value:null}},
       vertexShader:"varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
@@ -3290,9 +3313,12 @@ if(THREE.EffectComposer&&THREE.UnrealBloomPass&&THREE.GammaCorrectionShader){
 /* ---------- graphics quality (0 low, 1 mid, 2 high) ---------- */
 var GFX_NAMES=["低","中","高"],gfx=isTouch?1:2;
 try{var gs=localStorage.getItem("lo-gfx");if(gs!==null&&/^[012]$/.test(gs))gfx=+gs;}catch(e){}
-function gfxPR(){return gfx===2?Math.min(devicePixelRatio,2):gfx===1?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,1)*.8;}
+var dynRes=true,dynScale=1,dynT=0,dynN=0,dynCool=0;
+try{if(localStorage.getItem("lo-dynres")==="0")dynRes=false;}catch(e){}
+function gfxPR(){return dynScale*(gfx===2?Math.min(devicePixelRatio,2):gfx===1?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,1)*.8);}
 function applyGfx(){
-  if(grass.userData.full)grass.count=Math.floor(grass.userData.full*(gfx===2?1:gfx===1?.5:.22));
+  var gf=gfx===2?1:gfx===1?.5:.22;grassCells.forEach(function(im){im.count=Math.floor(im.userData.full*gf);});
+  GRASS_DIST=gfx===2?70:gfx===1?55:38;DRAW_DIST=gfx===2?260:gfx===1?190:130;SMALL_DIST=gfx===2?120:gfx===1?95:70;
   var ms=gfx===2?2048:1024;sun.castShadow=gfx>0;
   if(sun.shadow.mapSize.x!==ms){sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}
   if(composer&&composer.passes[1])composer.passes[1].enabled=gfx>0;
@@ -3304,6 +3330,13 @@ function setGfx(v){gfx=clamp(v,0,2);try{localStorage.setItem("lo-gfx",String(gfx
 $("mGfx").addEventListener("click",function(){setGfx(gfx===0?2:gfx-1);});
 /* if the field keeps stuttering, offer once to lower the quality */
 var perfT=0,perfN=0,perfAsked=false;
+function dynResTick(raw){if(!dynRes||state!=="play"||paused)return;dynT+=raw;dynN++;dynCool-=raw;
+  if(dynT<1.5)return;var fps=dynN/dynT;dynT=0;dynN=0;if(dynCool>0)return;var target=fpsCap===30?27:48;
+  if(fps<target-3&&dynScale>.6){dynScale=Math.max(.6,dynScale-.1);resize();dynCool=2;}
+  else if(fps>target+8&&dynScale<1){dynScale=Math.min(1,dynScale+.1);resize();dynCool=4;}}
+function dynLabel(){$("mDyn").textContent="自動解像度："+(dynRes?"オン":"オフ");}
+$("mDyn").addEventListener("click",function(){dynRes=!dynRes;if(!dynRes){dynScale=1;resize();}try{localStorage.setItem("lo-dynres",dynRes?"1":"0");}catch(e){}dynLabel();});
+dynLabel();
 function perfWatch(raw){if(perfAsked||gfx===0||state!=="play"||paused)return;perfT+=raw;perfN++;
   if(perfT>6){var fps=perfN/perfT;perfT=0;perfN=0;if(fps<24){perfAsked=true;$("gfxAsk").hidden=false;}}}
 $("gfxYes").addEventListener("click",function(){$("gfxAsk").hidden=true;setGfx(gfx-1);});
@@ -3316,7 +3349,7 @@ function loop(now){
   requestAnimationFrame(loop);
   if(document.hidden)return;
   if(fpsCap===30&&now){if(now-lastFrameT<1000/30-3)return;lastFrameT=now;}
-  var raw=Math.min(clock.getDelta(),.05),dt=raw;perfWatch(raw);updateTips(raw);
+  var raw=Math.min(clock.getDelta(),.05),dt=raw;perfWatch(raw);dynResTick(raw);updateTips(raw);
   if(slowmo>0){slowmo-=raw;dt=raw*.3;}
   if(hitStop>0){hitStop-=raw;dt=raw*.1;}
   if(shake>0)shake=Math.max(0,shake-raw*.8);
