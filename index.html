@@ -2058,6 +2058,44 @@ function capeAnim(A,t,moveAmt,extra){
 }
 
 /* =========================================================
+   motion layer: pose cross-fades, job stances, run styles
+   ========================================================= */
+function poseBones(A){return A._pb||(A._pb=[A.hips,A.spine,A.head,A.AR.sh,A.AR.el,A.AL.sh,A.AL.el,A.LL.th,A.LL.kn,A.LR.th,A.LR.kn,A.wR,A.wL].filter(Boolean));}
+function poseSnap(A,out){var B=poseBones(A),i,r;for(i=0;i<B.length;i++){r=B[i].rotation;out[i*3]=r.x;out[i*3+1]=r.y;out[i*3+2]=r.z;}out[B.length*3]=A.hips.position.y;}
+/* call after the target pose is set and before finalizePose: when `key` changes, the old pose melts into the new one over `dur` seconds */
+function poseBlend(A,key,dt,dur){var B=poseBones(A),n=B.length*3+1;
+  if(!A._last){A._last=new Float32Array(n);A._bs=new Float32Array(n);A._key=key;A._bt=A._bd=1;poseSnap(A,A._last);return;}
+  if(key!==A._key){A._key=key;A._bs.set(A._last);A._bt=0;A._bd=dur;}
+  if(A._bt<A._bd){A._bt+=dt;var f=easeS(Math.min(1,A._bt/A._bd)),S=A._bs,i,r;
+    for(i=0;i<B.length;i++){r=B[i].rotation;r.x=S[i*3]+(r.x-S[i*3])*f;r.y=S[i*3+1]+(r.y-S[i*3+1])*f;r.z=S[i*3+2]+(r.z-S[i*3+2])*f;}
+    A.hips.position.y=S[B.length*3]+(A.hips.position.y-S[B.length*3])*f;}
+  poseSnap(A,A._last);}
+/* ready stance per job, w = 0..1 (fades out while moving) */
+function jobIdle(A,t,w){if(w<=0)return;var o=A.out,br=Math.sin(t*1.8);
+  if(o==="warrior"){A.LL.th.rotation.x-=.16*w;A.LL.kn.rotation.x+=.12*w;A.LR.th.rotation.x+=.14*w;A.LR.kn.rotation.x+=.14*w;A.LL.th.rotation.z-=.05*w;A.LR.th.rotation.z+=.05*w;
+    A.hips.position.y-=.035*w;A.hips.rotation.y-=.12*w;A.spine.rotation.y+=.1*w;A.AR.sh.rotation.x-=.32*w;A.AR.sh.rotation.z+=.06*w;A.AR.el.rotation.x-=.35*w;A.AL.sh.rotation.x-=.12*w;A.spine.rotation.x+=br*.015*w;}
+  else if(o==="thief"){var bo=Math.sin(t*3.6);A.hips.position.y-=(.09+bo*.012)*w;A.LL.th.rotation.x-=.32*w;A.LL.kn.rotation.x+=.55*w;A.LR.th.rotation.x+=.05*w;A.LR.kn.rotation.x+=.45*w;
+    A.LL.th.rotation.z-=.08*w;A.LR.th.rotation.z+=.08*w;A.spine.rotation.x+=.2*w;A.head.rotation.x-=.12*w;
+    A.AR.sh.rotation.x-=.55*w;A.AR.sh.rotation.z+=.15*w;A.AR.el.rotation.x-=.75*w;A.AL.sh.rotation.x-=.45*w;A.AL.sh.rotation.z-=.15*w;A.AL.el.rotation.x-=.8*w;}
+  else if(o==="archer"){A.LL.th.rotation.x-=.1*w;A.LR.th.rotation.x+=.1*w;A.LL.th.rotation.z-=.04*w;A.LR.th.rotation.z+=.04*w;A.AL.sh.rotation.x-=.4*w;A.AL.sh.rotation.z-=.1*w;A.AL.el.rotation.x-=.2*w;
+    A.spine.rotation.y+=.1*w;A.head.rotation.y-=.08*w;A.AR.sh.rotation.x-=.12*w;A.spine.rotation.x+=br*.012*w;}
+  else if(o==="mage"){A.AL.sh.rotation.x-=.38*w;A.AL.sh.rotation.z-=.28*w;A.AL.el.rotation.x-=.55*w;A.spine.rotation.z+=Math.sin(t*1.1)*.025*w;A.spine.rotation.x-=.03*w;A.head.rotation.x-=.04*w;
+    A.LR.th.rotation.x+=.06*w;if(A.orbMat)A.orbMat.emissiveIntensity=2.2+(Math.sin(t*2.4)*.5+.5)*1.6*w;}
+  else if(o==="priest"){A.AL.sh.rotation.x-=.6*w;A.AL.sh.rotation.y+=.5*w;A.AL.el.rotation.x-=1.25*w;A.AR.sh.rotation.x-=.15*w;A.head.rotation.x+=.05*w;A.spine.rotation.x+=br*.012*w;
+    A.LL.th.rotation.x-=.06*w;A.LR.th.rotation.x+=.06*w;}}
+/* run style per job, s = sprint amount 0..1, m = move amount */
+function jobRun(A,m,s){var o=A.out,k=m;if(k<=0)return;
+  if(o==="thief"){A.spine.rotation.x+=(.1+.22*s)*k;A.AR.sh.rotation.x+=.55*s*k;A.AL.sh.rotation.x+=.55*s*k;A.AR.sh.rotation.z+=.25*s*k;A.AL.sh.rotation.z-=.25*s*k;A.head.rotation.x-=.15*s*k;}
+  else if(o==="warrior"){A.spine.rotation.x+=.06*k;A.AR.sh.rotation.x-=.2*k;A.AR.el.rotation.x-=.25*k;A.hips.position.y-=.02*s*k;}
+  else if(o==="archer"){A.AL.sh.rotation.x-=.25*k;A.spine.rotation.x+=.05*k;}
+  else if(o==="mage"){A.AL.sh.rotation.x-=.15*k;A.AL.sh.rotation.z-=.2*k;A.spine.rotation.x+=.04*k;}
+  else if(o==="priest"){A.AL.sh.rotation.x-=.3*k;A.AL.el.rotation.x-=.5*k;A.spine.rotation.x+=.05*k;}}
+/* step into a melee swing: w<0 weight back (wind-up), 1 = full lunge */
+function lungeLayer(A,w){var f=Math.max(0,w);
+  A.LL.th.rotation.x+=-.55*w;A.LL.kn.rotation.x+=.4*f;A.LR.th.rotation.x+=.42*w;A.LR.kn.rotation.x+=.22*f;
+  A.hips.position.y-=.075*f-.02*Math.min(0,w);A.spine.rotation.x+=.16*w;}
+
+/* =========================================================
    enemies
    ========================================================= */
 var furMat=new THREE.MeshStandardMaterial({color:0x2a2724,roughness:1});
@@ -2525,6 +2563,61 @@ function talk(){
 }
 
 var TRAIL_COL={warrior:[[.5,.36,.18],[1.5,1.15,.7]],priest:[[.6,.55,.3],[1.9,1.7,1.05]],thief:[[.35,.08,.5],[1.3,.4,2]]};
+/* ---------- job select: each class shows off for a couple of seconds ---------- */
+var SHOW=null,SFX=[],stageShake=0,showYaw=0;
+var SHOW_SEQ={warrior:[0,1,2],thief:[0,1,2,3],archer:[0,2],mage:[0,1,2],priest:[0,2,"pray"]};
+function showStart(job){SHOW={job:job,i:0,a:null,wait:job==="archer"?.5:.35,pray:0};}
+function sfxMat(c){return new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,toneMapped:false});}
+function sfx(kind,c,o){o=o||{};var g,m=sfxMat(c),mesh;
+  if(kind==="ring"){g=new THREE.RingGeometry(.82,1,56);mesh=new THREE.Mesh(g,m);mesh.rotation.x=-Math.PI/2;}
+  else if(kind==="circle"){mesh=new THREE.Group();[[.9,1],[.62,.68],[.3,.34]].forEach(function(r){var q=new THREE.Mesh(new THREE.RingGeometry(r[0],r[1],6+Math.round(r[0]*40)),m);mesh.add(q);});
+    for(var k=0;k<6;k++){var b=new THREE.Mesh(new THREE.PlaneGeometry(.04,.66),m);b.rotation.z=k*Math.PI/3;b.position.set(Math.sin(k*Math.PI/3)*.64,Math.cos(k*Math.PI/3)*.64,0);mesh.add(b);}mesh.rotation.x=-Math.PI/2;}
+  else if(kind==="pillar"){g=new THREE.CylinderGeometry(.55,.75,6,40,1,true);mesh=new THREE.Mesh(g,m);}
+  else if(kind==="streak"){g=new THREE.BoxGeometry(.018,.018,.9);mesh=new THREE.Mesh(g,m);}
+  else{g=new THREE.SphereGeometry(.22,20,14);mesh=new THREE.Mesh(g,m);}
+  mesh.position.copy(o.p||new THREE.Vector3(0,STAGE_Y+.03,0));if(o.ry!=null)mesh.rotation.y=o.ry;stage.add(mesh);
+  var f={kind:kind,mesh:mesh,mat:m,t:0,life:o.life||.6,r0:o.r0||.3,r1:o.r1||2,a:o.a||1,v:o.v||null,spin:o.spin||0};SFX.push(f);f.apply=function(){};sfxStep(f,0);return f;}
+function sfxStep(f,dt){f.t+=dt;var k=Math.min(1,f.t/f.life),fade=k<.15?k/.15:1-easeS((k-.15)/.85),M=f.mesh;f.mat.opacity=f.a*fade;
+  if(f.kind==="ring"||f.kind==="burst"){var r=lerp(f.r0,f.r1,easeO(k));M.scale.set(r,r,r);}
+  else if(f.kind==="circle"){var c=lerp(f.r0,f.r1,easeO(Math.min(1,k*3)));M.scale.set(c,c,c);M.rotation.z+=dt*f.spin;}
+  else if(f.kind==="pillar"){var w=lerp(f.r0,f.r1,easeO(k));M.scale.set(w,1+k*.3,w);}
+  else if(f.kind==="streak"&&f.v){M.position.addScaledVector(f.v,dt);}
+  return k>=1;}
+function sfxUpdate(dt){for(var i=SFX.length-1;i>=0;i--){var f=SFX[i];if(sfxStep(f,dt)){stage.remove(f.mesh);f.mesh.traverse(function(o){if(o.geometry)o.geometry.dispose();});f.mat.dispose();SFX.splice(i,1);}}}
+function sfxClear(){SFX.forEach(function(f){stage.remove(f.mesh);});SFX=[];}
+function fwdAt(d,y){var r=player.rotation.y;return new THREE.Vector3(Math.sin(r)*d,STAGE_Y+y,Math.cos(r)*d);}
+function showFx(job,c){var r=player.rotation.y;
+  if(job==="warrior"){if(c===2){sfx("ring",0xffb060,{p:fwdAt(.9,.04),r0:.2,r1:2.6,life:.7});sfx("ring",0xc89060,{p:fwdAt(.9,.03),r0:.1,r1:1.6,life:1,a:.6});sfx("burst",0xffd090,{p:fwdAt(.9,.2),r0:.3,r1:2.2,life:.35,a:.8});stageShake=.25;}
+    else sfx("ring",0xfff0d0,{p:fwdAt(.5,1.1),r0:.4,r1:1.2,life:.3,a:.5});}
+  else if(job==="thief"){if(c===3){sfx("ring",0xa040ff,{p:fwdAt(.2,.9),r0:.4,r1:2.2,life:.5});sfx("burst",0x6a20c0,{p:fwdAt(.2,1),r0:.4,r1:1.8,life:.4,a:.7});}
+    else sfx("ring",0xc070ff,{p:fwdAt(.6,1.1),r0:.2,r1:.9,life:.25,a:.7});}
+  else if(job==="archer"){var p=fwdAt(.5,1.45),v=new THREE.Vector3(Math.sin(r),0,Math.cos(r)).multiplyScalar(26);
+    var offs=c===2?[-.14,0,.14]:[0];offs.forEach(function(o){var q=sfx("streak",0xb0ffb0,{p:p.clone(),ry:r+o,life:.45,a:.8,v:v.clone().applyAxisAngle(new THREE.Vector3(0,1,0),o)});});
+    sfx("ring",0x9aff9a,{p:p.clone(),r0:.1,r1:.45,life:.3,a:.5}).mesh.rotation.set(0,r,0);}
+  else if(job==="mage"){var col=c===0?0xff7a30:c===1?0x60c8ff:0xb090ff;
+    if(c===2){sfx("circle",0x9a7aff,{p:new THREE.Vector3(0,STAGE_Y+.04,0),r0:.2,r1:1.5,life:1.6,spin:1.5});sfx("burst",0xc0b0ff,{p:fwdAt(.6,1.9),r0:.2,r1:1.4,life:.5});sfx("pillar",0x8a70ff,{p:fwdAt(0,3),r0:.3,r1:.5,life:.6,a:.4});stageShake=.12;}
+    else sfx("burst",col,{p:fwdAt(.8,1.4),r0:.15,r1:1,life:.35});}
+  else if(job==="priest"){if(c===2){sfx("ring",0xffe090,{p:fwdAt(.9,.04),r0:.2,r1:2.2,life:.7});sfx("burst",0xfff0b0,{p:fwdAt(.9,.3),r0:.3,r1:1.6,life:.4,a:.7});stageShake=.2;}
+    else if(c==="pray"){sfx("pillar",0xffe6a0,{p:new THREE.Vector3(0,STAGE_Y+3,0),r0:.5,r1:.85,life:1.8,a:.22});sfx("circle",0xffd070,{p:new THREE.Vector3(0,STAGE_Y+.04,0),r0:.3,r1:1.3,life:1.8,spin:.6});}
+    else sfx("ring",0xfff0c0,{p:fwdAt(.5,1.1),r0:.3,r1:1.1,life:.3,a:.5});}}
+/* drives the stage pose while the job screen is open */
+function showUpdate(dt){if(!A)return;poseRest(A);var key="i";
+  if(SHOW&&SHOW.job===A.out){var seq=SHOW_SEQ[SHOW.job],step=seq[SHOW.i];
+    if(SHOW.wait>0){SHOW.wait-=dt;}
+    else if(step==="pray"){SHOW.pray+=dt;var u=easeO(Math.min(1,SHOW.pray/.4))*(1-easeS(ph(SHOW.pray,1.7,2.1)));
+      if(SHOW.pray-dt<=0)showFx("priest","pray");
+      A.AR.sh.rotation.set(-1.05*u,-.5*u,.12);A.AR.el.rotation.x=-.35-.9*u;A.AL.sh.rotation.set(-1.05*u,.5*u,-.12);A.AL.el.rotation.x=-.3-.95*u;
+      A.head.rotation.x+=.28*u;A.spine.rotation.x+=.08*u;A.LL.kn.rotation.x+=.15*u;A.LR.kn.rotation.x+=.15*u;A.hips.position.y-=.03*u;key="p";
+      if(SHOW.pray>2.1){SHOW.i++;}}
+    else if(step!=null){var TM=TIMES[SHOW.job][step];
+      if(!SHOW.a){SHOW.a={name:"attack",t:0,combo:step,comboWindow:0,hit:false,dir:{x:0,z:1},target:null,fx:false};}
+      var sv=act;act=SHOW.a;act.t+=dt;attackUpdate(dt,true);act=sv;key="a"+step+"_"+SHOW.i;
+      if(!SHOW.a.fx&&SHOW.a.t>=TM[1]-.02){SHOW.a.fx=true;showFx(SHOW.job,step);}
+      if(SHOW.a.t>=(SHOW.i===seq.length-1?TM[2]:TM[1]+(TM[2]-TM[1])*.55)){SHOW.a=null;SHOW.i++;if(SHOW.i>=seq.length)SHOW=null;}}
+    else SHOW=null;}
+  if(key==="i")jobIdle(A,time,1);
+  poseBlend(A,key,dt,key==="i"?.35:.09);
+  faceAnim(A,dt,time);finalizePose(A);capeAnim(A,time,0,0);}
 function rebuildPlayer(outfit){
   var tc=TRAIL_COL[outfit||P.job]||TRAIL_COL.warrior;trailIn=tc[0];trailOut=tc[1];
   if(A){player.remove(A.root);A.B.dispose();}
@@ -2730,17 +2823,19 @@ function swingArm(arm,w,inWind,inSwing,pw,psw,back,sgn){
   if(w)w.rotation.x=.35+1.15*Math.min(1,pw*1.6)*back;
   return armY;
 }
-function attackUpdate(dt){
+function attackUpdate(dt,demo){
   var J=P.job,C=act.combo,TM=TIMES[J][C],dur=TM[2];
   var pw=ph(act.t,0,TM[0]),psw=easeO(ph(act.t,TM[0],TM[1])),prc=ph(act.t,TM[1],dur),back=1-easeS(prc);
-  var inWind=act.t<TM[0],inSwing=!inWind&&act.t<TM[1],push=0,hitAt=TM[0]+(TM[1]-TM[0])*.6;
-  if(act.target&&!act.target.dead&&!act.hit)facing=angLerp(facing,Math.atan2(act.target.mesh.position.x-player.position.x,act.target.mesh.position.z-player.position.z),Math.min(1,dt*14));
+  var inWind=act.t<TM[0],inSwing=!inWind&&act.t<TM[1],push=0,hitAt=demo?1e9:TM[0]+(TM[1]-TM[0])*.6;
+  var lw=inWind?-.35*easeO(pw):inSwing?psw:back;   /* weight shift: back on wind-up, step in on the swing, ease out */
+  if(!demo&&act.target&&!act.target.dead&&!act.hit)facing=angLerp(facing,Math.atan2(act.target.mesh.position.x-player.position.x,act.target.mesh.position.z-player.position.z),Math.min(1,dt*14));
   if(J==="warrior"||J==="priest"){
     trailOn=act.t>TM[0]*.7&&act.t<TM[1]+.05;
     if(C<2){
       var armY=swingArm(A.AR,A.wR,inWind,inSwing,pw,psw,back,C===0?1:-1);
       A.spine.rotation.y=armY*.38;A.hips.rotation.y=armY*.15;A.spine.rotation.x=.1*(inSwing?1:back);
       A.AL.sh.rotation.set(-.5*back,-armY*.2,-.3);push=inSwing?5:0;
+      lungeLayer(A,lw*(J==="warrior"?1.1:.9));A.hips.rotation.y+=armY*.12*(inSwing?1:back);A.head.rotation.y-=armY*.15;
     }else{
       var jump=inWind?.6*easeO(pw):inSwing?.6*(1-psw):0,air=jump/.6;
       var aX=inWind?-3.0*easeO(pw):inSwing?-3.0+2.45*psw:-.55*back;
@@ -2766,6 +2861,7 @@ function attackUpdate(dt){
       var arm=C===1?A.AL:A.AR,w=C===1?A.wL:A.wR,sg=C===1?-1:1;
       var ay=swingArm(arm,w,inWind,inSwing,pw,psw,back,sg);
       A.spine.rotation.y=ay*.45;A.hips.rotation.y=ay*.2;push=inSwing?6:0;
+      lungeLayer(A,lw*.8);A.hips.position.y-=.05;A.LL.kn.rotation.x+=.2;A.LR.kn.rotation.x+=.2;A.spine.rotation.x+=.1;
     }else{
       var oy=inWind?-1.0*easeO(pw):inSwing?-1.0+2.5*psw:1.5*back;
       var lift=(inSwing||inWind)?1:back;
@@ -2773,6 +2869,8 @@ function attackUpdate(dt){
       A.AR.el.rotation.x=-.2;A.AL.el.rotation.x=-.2;
       if(A.wR)A.wR.rotation.x=.35+1.05*lift;if(A.wL)A.wL.rotation.x=.35+1.05*lift;
       A.spine.rotation.x=.15;push=inWind?5:0;
+      if(inSwing)A.hips.rotation.y+=psw*Math.PI*2;   /* spinning cut */
+      A.hips.position.y-=.12*(inWind?easeO(pw):inSwing?1:back);A.LL.kn.rotation.x+=.6*lift;A.LR.kn.rotation.x+=.6*lift;A.LL.th.rotation.x-=.3*lift;A.LR.th.rotation.x+=.1*lift;
     }
     if(!act.hit&&act.t>=hitAt){act.hit=true;hitEnemies(C===3?2.4:2.1,C===3?1.7:1.25,[.55,.6,.6,1.15][C]);
       if(C===3){var tx=player.position.x+Math.sin(facing)*1.1,tz=player.position.z+Math.cos(facing)*1.1;fxShadow(tx,player.position.y+1,tz,1.8);ringFx(tx,player.position.y+.9,tz,1.6,0xa040ff,.35);blast(tx,player.position.y+1,tz,.9,0x6a20c0);}}
@@ -2783,9 +2881,11 @@ function attackUpdate(dt){
     if(A.wL)A.wL.rotation.x=1.57*hold;
     A.AR.sh.rotation.set(-1.5*hold,-.45*hold,0);A.AR.el.rotation.x=rel?lerp(-2.3,-.6,easeO(ph(act.t,TM[1],TM[1]+.12)))*hold:-.3-2.0*draw;
     A.spine.rotation.y=-.25*hold;A.head.rotation.y=.2*hold;
+    A.LL.th.rotation.x-=.22*hold;A.LR.th.rotation.x+=.2*hold;A.LL.th.rotation.z-=.06*hold;A.LR.th.rotation.z+=.06*hold;A.LR.kn.rotation.x+=.15*hold;A.hips.position.y-=.03*hold;
+    if(rel){var rk=Math.sin(Math.min(1,ph(act.t,TM[1],TM[1]+.22))*Math.PI);A.spine.rotation.x-=.12*rk;A.head.rotation.x-=.06*rk;}
     if(A.nock)A.nock.visible=act.t<TM[1];
     if(act.t<TM[1])setHand(A.AR,.8);
-    if(!act.hit&&act.t>=TM[1]){act.hit=true;
+    if(!demo&&!act.hit&&act.t>=TM[1]){act.hit=true;
       var sx=player.position.x+Math.sin(facing)*.6,sz=player.position.z+Math.cos(facing)*.6,syy=player.position.y+1.45;
       if(C===2){[-.14,0,.14].forEach(function(o){spawnProj("arrow",sx,syy,sz,facing+o,.8,false,o===0?act.target:null);});fxWind(sx,syy,sz,.8);ringFx(sx,syy,sz,.9,0x9aff9a,.25);}
       else spawnProj("arrow",sx,syy,sz,facing,1,false,act.target);}
@@ -2796,19 +2896,24 @@ function attackUpdate(dt){
       A.AR.sh.rotation.set(-.6*up-.85*(inSwing?psw:act.t>=TM[1]?back:0),0,.1);A.AR.el.rotation.x=-.8*(1-up)-.15;
       if(A.wR)A.wR.rotation.x=1.2*up;
       A.AL.sh.rotation.set(-.4*up,0,-.2);
+      A.AL.sh.rotation.x-=.9*(inSwing?psw:act.t>=TM[1]?back:0);A.AL.el.rotation.x=-.3;   /* free hand pushes the spell out */
+      lungeLayer(A,(inWind?-.25*pw:inSwing?.7*psw:.7*back));A.spine.rotation.y+=(inWind?-.25*pw:inSwing?.2*psw:.2*back);
     }else{
       var ax=inWind?-2.8*easeO(pw):inSwing?-2.8+1.5*psw:-1.3*back;
       A.AR.sh.rotation.set(ax,0,.1);A.AL.sh.rotation.set(ax,0,-.1);A.AR.el.rotation.x=-.2;A.AL.el.rotation.x=-.2;
       if(A.wR)A.wR.rotation.x=1.57*up;A.spine.rotation.x=inWind?-.2*pw:.1;
+      A.spine.rotation.x+=inWind?-.12*pw:inSwing?.25*psw:.25*back;A.head.rotation.x-=inWind?.2*pw:0;
+      A.LL.th.rotation.x-=.2*up;A.LR.th.rotation.x+=.15*up;A.hips.position.y-=(inSwing||act.t>=TM[1]?.06*(inSwing?psw:back):0);
     }
     if(A.orbMat){A.orbMat.emissive.setHex(C===0?0xff6a20:C===1?0x50c0ff:0xa0c0ff);A.orbMat.emissiveIntensity=2.2+(inWind?pw*6:0);
       if(inWind&&A.wR){var op=A.wR.localToWorld(orbTmp.set(0,1.16,0));spray(FXA,op.x,op.y,op.z,1,{spd:[.2,.6],jit:.25,life:[.15,.3],size:[.04,.08],c0:C===0?C_FIRE:C===1?C_ICE:C_ELEC,a:.9,drag:3});}}
-    if(!act.hit&&act.t>=TM[1]-.02){act.hit=true;
+    if(!demo&&!act.hit&&act.t>=TM[1]-.02){act.hit=true;
       var ox=player.position.x+Math.sin(facing)*.9,oz=player.position.z+Math.cos(facing)*.9;
       if(C===2){var lx,lz;if(act.target&&!act.target.dead){lx=act.target.mesh.position.x;lz=act.target.mesh.position.z;}else{lx=player.position.x+Math.sin(facing)*9;lz=player.position.z+Math.cos(facing)*9;}
         fxLightningAt(lx,lz);enemies.forEach(function(e){if(e.dead)return;if(Math.hypot(e.mesh.position.x-lx,e.mesh.position.z-lz)<2.6+e.T.rad){dealDamage(e,1.8,lx,lz,"elec");if(!e.dead&&e.state==="windup"){e.state="stagger";e.t=0;}}});}
       else spawnProj(C===0?"fire":"ice",ox,player.position.y+1.4,oz,facing,C===0?1:.9,false,act.target);}
   }
+  if(demo)return;
   player.position.x+=Math.sin(facing)*dt*push;player.position.z+=Math.cos(facing)*dt*push;
   if(act.t>=dur)act=idleAct(C,.4);
 }
@@ -2884,6 +2989,7 @@ function setState(s){
   fill.intensity=0;
   player.visible=s!=="title"&&s!=="saves";
   if(s==="create"||s==="job"){stage.add(player);player.position.set(0,STAGE_Y,0);}else if(s==="play"){scene.add(player);}
+  if(s==="job"&&P)showStart(P.job);else if(s!=="job"){SHOW=null;sfxClear();}
   if(s!=="play")aimMark.visible=false;
   applyViewOffset();
   if(s!=="play"){$("bossbar").hidden=true;$("tTalk").hidden=true;$("prompt").classList.remove("on");keys={};stickVec.x=stickVec.z=0;}
@@ -2982,6 +3088,8 @@ function netUpdate(dt){
       if(code===1)A2.spine.rotation.x+=.22;
       if(code===3){o.atk+=adt*9;var sw=Math.sin(o.atk);A2.AR.sh.rotation.set(-1.4-sw*.9,0,.25);A2.AR.el.rotation.x=-.5+sw*.3;A2.spine.rotation.y+=sw*.25;}else o.atk=0;
       if(code===5){A2.AL.sh.rotation.set(-1.2,.5,-.2);A2.AL.el.rotation.x=-1.1;A2.AR.sh.rotation.set(-.5,0,.2);}}
+    if(code===0&&o.mv<.6)jobIdle(A2,time,1-o.mv/.6);if(code<=1)jobRun(A2,o.mv,code===1?1:0);
+    poseBlend(A2,"c"+code,adt,code===3?.07:.16);
     faceAnim(A2,adt,time);finalizePose(A2);capeAnim(A2,time,o.mv,0);}}
 var netAnimCode=0;
 function netSend(){
@@ -3309,7 +3417,7 @@ function renderJobs(){
   var box=$("jobList");box.innerHTML="";
   JOB_ORDER.forEach(function(k){var j=JOBS[k],x=JOB_EXTRA[k];var b=document.createElement("button");b.type="button";b.className="jt";b.id="job-"+k;b.setAttribute("aria-pressed",String(P.job===k));
     b.innerHTML='<svg viewBox="0 0 40 40" aria-hidden="true">'+x.icon+'</svg>';var nm=document.createElement("span");nm.textContent=j.name;b.appendChild(nm);
-    b.addEventListener("click",function(){if(P.job===k)return;P.job=k;renderJobs();rebuildPlayer(k);});box.appendChild(b);});
+    b.addEventListener("click",function(){if(P.job===k){showStart(k);return;}P.job=k;renderJobs();rebuildPlayer(k);sfxClear();showStart(k);});box.appendChild(b);});
   var j=JOBS[P.job],x=JOB_EXTRA[P.job];
   $("jobName").textContent=j.name;$("jobEn").textContent=x.en;
   $("radar").innerHTML=radarSvg(x.st);
@@ -3401,12 +3509,16 @@ function updatePlayer(dt){
   var slam=act.name==="attack"&&(P.job==="warrior"||P.job==="priest")&&act.combo===2;
   var sprint=act.name==="idle"&&typeof dashing!=="undefined"&&dashing;
   if(act.name==="idle"||(act.name==="attack"&&!slam)){
-    A.walkPh+=dt*(moveAmt>0?(sprint?11+spd*1.2:8+spd):0);
+    var mvW=Math.max(moveAmt,A.mvS||0);A.walkPh+=dt*(mvW>.04?(sprint?11+spd*1.2:8+spd)*Math.max(.55,mvW):0);
     if(airY>0){A.LL.th.rotation.x=-.7;A.LL.kn.rotation.x=1.1;A.LR.th.rotation.x=-.25;A.LR.kn.rotation.x=.6;A.AR.sh.rotation.x-=.5;A.AL.sh.rotation.x-=.5;A.AR.sh.rotation.z+=.25;A.AL.sh.rotation.z-=.25;}
-    else walkAnim(A,sprint?Math.min(1.35,moveAmt*1.35):moveAmt,act.name==="idle"&&!guarding&&P.job!=="mage");
+    else{var wa=lerp(A.mvS||0,moveAmt,.35);walkAnim(A,sprint?Math.min(1.35,wa*1.35):wa,act.name==="idle"&&!guarding&&P.job!=="mage");}
     if(sprint){A.spine.rotation.x+=.22;A.hips.rotation.x+=.06;}
   }
   if(landT>0){landT-=dt;var lk=Math.sin(Math.min(1,landT/.18)*Math.PI);A.hips.position.y-=lk*.12;A.LL.kn.rotation.x+=lk*.5;A.LR.kn.rotation.x+=lk*.5;}
+  A.mvS=lerp(A.mvS||0,moveAmt,Math.min(1,dt*7));A.spS=lerp(A.spS||0,sprint?1:0,Math.min(1,dt*6));
+  if(act.name==="idle"&&!guarding&&airY<=0){jobIdle(A,time,1-Math.min(1,A.mvS*1.6));jobRun(A,A.mvS,A.spS);}
+  var pk=act.name==="attack"?"a"+act.combo:act.name==="idle"?(guarding?"g":airY>0?"j":"i"):act.name;
+  poseBlend(A,pk,dt,act.name==="attack"?.07:act.name==="dodge"?.06:pk==="j"?.1:.16);
   faceAnim(A,dt,time);finalizePose(A);
   capeAnim(A,time,moveAmt,act.name==="dodge"?.6:0);
   collide(player.position,.45);
@@ -3576,14 +3688,15 @@ function render(dt){
     var gh=H(camera.position.x,camera.position.z)+.4;if(camera.position.y<gh)camera.position.y=gh;
     if(shake>0){camera.position.x+=(Math.random()-.5)*shake;camera.position.y+=(Math.random()-.5)*shake;}
   }else if(state==="create"||state==="job"){
-    player.rotation.y=previewYaw;
+    showYaw=lerp(showYaw,SHOW&&SHOW.job==="archer"?-1.25:0,Math.min(1,dt*5));player.rotation.y=previewYaw+showYaw;   /* archer turns side-on to shoot */
     var s2=A?A.root.scale.y:1;
     var ty=player.position.y+(faceView?(A&&A.faceY||1.86)*s2:1.05*s2),dist=faceView?(A&&A.mh?.62:.85):3.6;
     camTarget.set(0,ty,0);
     camPos.set(0,ty+(faceView?.03:.3),dist);
     camera.position.lerp(camPos,Math.min(1,dt*6));
     keyLight.position.set(camera.position.x-1.2,camera.position.y+.9,camera.position.z-.3);
-    if(A){poseRest(A);A.walkPh=0;faceAnim(A,dt,time);finalizePose(A);capeAnim(A,time,0,0);}
+    if(A&&state==="job"){showUpdate(dt);sfxUpdate(dt);if(stageShake>0){stageShake=Math.max(0,stageShake-dt*.9);camera.position.x+=(Math.random()-.5)*stageShake*.5;camera.position.y+=(Math.random()-.5)*stageShake*.5;}}
+    else if(A){poseRest(A);A.walkPh=0;faceAnim(A,dt,time);finalizePose(A);capeAnim(A,time,0,0);}
   }else{
     var ta=Math.sin(time*.07)*.7;
     camTarget.set(0,2.4,0);
