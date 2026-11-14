@@ -176,15 +176,18 @@ body[data-state="title"] #titleBg,body[data-state="saves"] #titleBg{display:bloc
 body[data-state="play"] #touch{display:block}
 #stick{position:absolute;left:calc(28px + env(safe-area-inset-left,0px));bottom:calc(30px + env(safe-area-inset-bottom,0px));width:120px;height:120px;border-radius:50%;border:2px solid rgba(243,230,200,.35);background:rgba(14,12,9,.35);pointer-events:auto}
 #knob{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:rgba(243,230,200,.5)}
-#tbtns{position:absolute;right:calc(20px + env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));width:190px;height:180px;pointer-events:none}
+#tbtns{position:absolute;right:calc(20px + env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));width:236px;height:200px;pointer-events:none}
 .tb{position:absolute;border-radius:50%;border:2px solid var(--line);background:rgba(14,12,9,.6);color:var(--text);font-size:12px;pointer-events:auto;display:flex;align-items:center;justify-content:center}
 .tb.active{background:rgba(232,196,119,.35)}
 #tAtk{width:80px;height:80px;right:0;bottom:0;border-color:var(--hp)}
 #tDodge{width:58px;height:58px;right:94px;bottom:0}
 #tGuard{width:58px;height:58px;right:6px;bottom:94px}
-#tTalk{width:62px;height:62px;right:92px;bottom:80px;border-color:var(--relic);color:var(--relic)}
+#tTalk{width:62px;height:62px;right:160px;bottom:96px;border-color:var(--relic);color:var(--relic)}
+#tJump{width:58px;height:58px;right:84px;bottom:76px}
+#tDash{width:54px;height:54px;right:162px;bottom:4px;font-size:11px}
+#tDash.on{background:rgba(232,196,119,.45);border-color:var(--relic);color:#fff}
 @media (hover:hover) and (pointer:fine){#touch,body[data-state="play"] #touch{display:none}}
-@media (hover:none){#help{display:none!important}}
+@media (hover:none){#help{display:none!important}#tipBox{left:calc(20px + env(safe-area-inset-left,0px));transform:none;bottom:calc(164px + env(safe-area-inset-bottom,0px));max-width:min(330px,44vw);font-size:13px;padding:8px 10px}}
 @media (max-height:540px){
   .card{padding:14px 16px;max-height:92vh}
   #scrTitle{padding-bottom:calc(5vh + env(safe-area-inset-bottom,0px))}
@@ -223,7 +226,7 @@ window.addEventListener("error",function(e){var b=document.getElementById("err")
 <div class="hud" id="banner"></div>
 <div class="hud" id="tipBox" hidden role="status"></div>
 <div class="hud" id="prompt">E：話す</div>
-<div class="hud" id="help">WASD 移動 ・ ドラッグ 視点 ・ 左クリック 攻撃 ・ Space 回避 ・ 右クリック/F ガード ・ E 話す ・ C ステータス</div>
+<div class="hud" id="help">WASD 移動 ・ Shift長押し ダッシュ ・ Space ジャンプ ・ ドラッグ 視点 ・ 左クリック 攻撃 ・ Shift短押し 回避 ・ 右クリック/F ガード ・ E 話す ・ C ステータス</div>
 <div class="hud" id="toast">セーブしました</div>
 
 <div id="touch">
@@ -232,6 +235,8 @@ window.addEventListener("error",function(e){var b=document.getElementById("err")
     <div class="tb" id="tAtk">攻撃</div>
     <div class="tb" id="tDodge">回避</div>
     <div class="tb" id="tGuard">ガード</div>
+    <div class="tb" id="tJump">ジャンプ</div>
+    <div class="tb" id="tDash">ダッシュ</div>
     <div class="tb" id="tTalk" hidden>話す</div>
   </div>
 </div>
@@ -2398,10 +2403,10 @@ function closeGate(){gateOpen=false;gateT=0;gateObs.forEach(function(o){o.off=fa
 /* ---------- tutorial hints: each one shows once per save ---------- */
 var TIP_KEYS=["move","talk","attack","windup","just","guard","sp"];
 var TIPS={
-  move:["WASD で移動、マウスをドラッグすると視点を動かせます。","左下のスティックで移動、画面をなぞると視点を動かせます。"],
+  move:["WASD で移動、Shift 長押しでダッシュ、Space でジャンプ。マウスをドラッグすると視点を動かせます。","左下のスティックで移動。「ダッシュ」で走る（もう一度押すと歩きに戻る）、「ジャンプ」で跳べます。画面をなぞると視点を動かせます。"],
   talk:["光の柱が目的地の目印です。老騎士に近づいて E で話しかけよう。","光の柱が目的地の目印です。老騎士に近づいて「話す」を押そう。"],
   attack:["左クリックで攻撃。続けて押すとコンボになります。","「攻撃」ボタンで攻撃。続けて押すとコンボになります。"],
-  windup:["敵の目が赤く光ったら攻撃の合図。Space で回避しよう。","敵の目が赤く光ったら攻撃の合図。「回避」で避けよう。"],
+  windup:["敵の目が赤く光ったら攻撃の合図。Shift を短く押して回避しよう。","敵の目が赤く光ったら攻撃の合図。「回避」で避けよう。"],
   just:["攻撃が当たる直前に回避すると「ジャスト回避」。スタミナが回復して素早く動けます。","攻撃が当たる直前に回避すると「ジャスト回避」。スタミナが回復して素早く動けます。"],
   guard:["右クリック / F でガード。攻撃の直前にガードすると「ジャストガード」で敵がひるみ、次の一撃が確定クリティカルに。","「ガード」でダメージを防げます。攻撃の直前にガードすると「ジャストガード」で敵がひるみ、次の一撃が確定クリティカルに。"],
   sp:["レベルアップ！ C でステータス画面を開いて SP を振ろう。","レベルアップ！右上の「ステータス」から SP を振ろう。"]};
@@ -2475,12 +2480,15 @@ addEventListener("keydown",function(e){
   if(e.code==="Escape"){if(!$("statsModal").hidden)toggleStats();else toggleMenu();return;}
   if(paused)return;
   keys[e.code]=true;
-  if(e.code==="Space"){e.preventDefault();tryDodge();}
+  if(e.code==="Space"){e.preventDefault();tryJump();}
+  if((e.code==="ShiftLeft"||e.code==="ShiftRight")&&!e.repeat){shiftT=performance.now();dashHeld=true;}
   if(e.code==="KeyF")startGuard();
   if(e.code==="KeyE")talk();
   if(e.code==="KeyC")toggleStats();
 });
-addEventListener("keyup",function(e){keys[e.code]=false;if(e.code==="KeyF")endGuard();});
+addEventListener("keyup",function(e){keys[e.code]=false;if(e.code==="KeyF")endGuard();
+  if(e.code==="ShiftLeft"||e.code==="ShiftRight"){dashHeld=false;if(state==="play"&&!paused&&performance.now()-shiftT<230)tryDodge();}});
+var shiftT=0,dashHeld=false,dashToggle=false,airY=0,jumpV=0,landT=0;
 var cv=renderer.domElement;
 cv.addEventListener("contextmenu",function(e){e.preventDefault()});
 cv.addEventListener("mousedown",function(e){
@@ -2532,6 +2540,9 @@ tbtn("tAtk",function(){tryAttack()});
 tbtn("tDodge",function(){tryDodge()});
 tbtn("tGuard",function(){startGuard()},function(){endGuard()});
 tbtn("tTalk",function(){talk()});
+tbtn("tJump",function(){tryJump()});
+(function(){var el=$("tDash");el.addEventListener("touchstart",function(e){e.preventDefault();e.stopPropagation();if(!running||paused)return;dashToggle=!dashToggle;el.classList.toggle("on",dashToggle);},{passive:false});
+  el.addEventListener("touchend",function(e){e.preventDefault();},{passive:false});})();
 
 /* =========================================================
    combat
@@ -2550,7 +2561,7 @@ function camForward(){return{x:-Math.sin(cam.yaw),z:-Math.cos(cam.yaw)};}
 function aimTarget(){var f=camForward(),best=null,bs=1e9;enemies.forEach(function(e){if(e.dead)return;var dx=e.mesh.position.x-player.position.x,dz=e.mesh.position.z-player.position.z,d=Math.hypot(dx,dz);if(d>24||d<.05)return;var ang=Math.acos(clamp((dx*f.x+dz*f.z)/d,-1,1));if(ang>.55)return;var sc2=ang*14+d;if(sc2<bs){bs=sc2;best=e;}});return best;}
 function busy(){return act.name==="attack"||act.name==="dodge"||act.name==="dead";}
 function tryAttack(){
-  if(act.name==="dead"||act.name==="dodge")return;
+  if(act.name==="dead"||act.name==="dodge"||airY>0)return;dashToggle=false;var tdb=$("tDash");if(tdb)tdb.classList.remove("on");
   var T=TIMES[P.job],n=T.length;
   if(act.name==="attack"&&act.t<T[act.combo][1]+.02)return;
   var c=(act.name==="attack"||act.comboWindow>0)?(act.combo+1)%n:0;
@@ -2561,6 +2572,10 @@ function tryAttack(){
   facing=Math.atan2(f.x,f.z);guarding=false;
   act={name:"attack",t:0,combo:c,comboWindow:0,hit:false,dir:f,target:tgt};
 }
+function tryJump(){
+  if(act.name!=="idle"||guarding||airY>0||jumpV!==0)return;
+  if(P.st<10){flash("スタミナ不足","",600);return;}
+  P.st-=10;stDelay=.4;jumpV=7.4;airY=.001;}
 function tryDodge(){
   if(act.name==="dead"||act.name==="dodge")return;
   if(P.st<25){flash("スタミナ不足","",600);return;}
@@ -3061,7 +3076,7 @@ function continueGame(i){
 function enterWorld(x,z,f){
   clearProjs();
   player.position.set(x,groundY(x,z),z);facing=f;player.rotation.y=f;cam.yaw=f+Math.PI;cam.pitch=.32;cam.dist=7;
-  act=idleAct();guarding=false;P.critReady=false;P.speedBuff=0;
+  act=idleAct();guarding=false;P.critReady=false;P.speedBuff=0;airY=0;jumpV=0;dashToggle=false;dashHeld=false;var tdb0=$("tDash");if(tdb0)tdb0.classList.remove("on");
   if(P.quest.step>=7)openGate(true);else closeGate();
   resetEnemies();
   setState("play");updateStatsUI();
@@ -3112,9 +3127,11 @@ function updatePlayer(dt){
     if(act.t>=.38)act=idleAct();
   }else if(act.name==="dead"){
     A.hips.rotation.x=-Math.min(1.45,act.t*3);A.hips.position.y=A.hipY-Math.min(.75,act.t*1.5);deadT+=dt;
-    if(deadT>2.2){player.position.set(0,0,7);var dd=D();P.hp=dd.maxHp;P.mp=dd.maxMp;P.st=100;act=idleAct();facing=Math.PI;flash("復活","祠の加護",1000);}
+    if(deadT>2.2){player.position.set(0,0,7);airY=0;jumpV=0;var dd=D();P.hp=dd.maxHp;P.mp=dd.maxMp;P.st=100;act=idleAct();facing=Math.PI;flash("復活","祠の加護",1000);}
   }else{
-    var mv=guarding?spd*.4:spd;
+    var dashing=(dashHeld||dashToggle)&&il>.3&&!guarding&&P.st>0;
+    if(dashing){P.st=Math.max(0,P.st-14*dt);stDelay=.5;if(P.st<=0){dashToggle=false;var tdb=$("tDash");if(tdb)tdb.classList.remove("on");}}
+    var mv=guarding?spd*.4:dashing?spd*1.6:spd;
     if(il>.05){player.position.x+=input.x*mv*il*dt;player.position.z+=input.z*mv*il*dt;moveAmt=il;
       if(!guarding)facing=angLerp(facing,Math.atan2(input.x,input.z),Math.min(1,dt*12));}
     if(guarding){
@@ -3123,14 +3140,19 @@ function updatePlayer(dt){
     }
   }
   var slam=act.name==="attack"&&(P.job==="warrior"||P.job==="priest")&&act.combo===2;
+  var sprint=act.name==="idle"&&typeof dashing!=="undefined"&&dashing;
   if(act.name==="idle"||(act.name==="attack"&&!slam)){
-    A.walkPh+=dt*(moveAmt>0?8+spd:0);
-    walkAnim(A,moveAmt,act.name==="idle"&&!guarding&&P.job!=="mage");
+    A.walkPh+=dt*(moveAmt>0?(sprint?11+spd*1.2:8+spd):0);
+    if(airY>0){A.LL.th.rotation.x=-.7;A.LL.kn.rotation.x=1.1;A.LR.th.rotation.x=-.25;A.LR.kn.rotation.x=.6;A.AR.sh.rotation.x-=.5;A.AL.sh.rotation.x-=.5;A.AR.sh.rotation.z+=.25;A.AL.sh.rotation.z-=.25;}
+    else walkAnim(A,sprint?Math.min(1.35,moveAmt*1.35):moveAmt,act.name==="idle"&&!guarding&&P.job!=="mage");
+    if(sprint){A.spine.rotation.x+=.22;A.hips.rotation.x+=.06;}
   }
+  if(landT>0){landT-=dt;var lk=Math.sin(Math.min(1,landT/.18)*Math.PI);A.hips.position.y-=lk*.12;A.LL.kn.rotation.x+=lk*.5;A.LR.kn.rotation.x+=lk*.5;}
   faceAnim(A,dt,time);finalizePose(A);
   capeAnim(A,time,moveAmt,act.name==="dodge"?.6:0);
   collide(player.position,.45);
-  player.position.y=groundY(player.position.x,player.position.z);
+  if(airY>0||jumpV!==0){jumpV-=22*dt;airY+=jumpV*dt;if(airY<=0){airY=0;jumpV=0;landT=.18;}}
+  player.position.y=groundY(player.position.x,player.position.z)+airY;
   player.rotation.y=facing;
   updateTrail(dt);
   if(stDelay>0)stDelay-=dt;else if(!guarding&&act.name!=="dodge")P.st=Math.min(100,P.st+d.stRegen*dt);
