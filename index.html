@@ -2871,7 +2871,7 @@ function applyViewOffset(){
 /* =========================================================
    online: other players, chat (Cloudflare Worker + Durable Object)
    ========================================================= */
-var ONLINE_URL="";   /* set once the server is deployed, e.g. wss://luminous-orbis-server.xxxx.workers.dev/ws */
+var ONLINE_URL="wss://luminous-orbis-server.ark-game01.workers.dev/ws";   /* set once the server is deployed, e.g. wss://luminous-orbis-server.xxxx.workers.dev/ws */
 var NET={ws:null,open:false,id:null,ch:1,others:{},count:0,lastSend:0,lastPing:0,lastSent:null,retry:0,closing:false,timer:null};
 function netWanted(){try{return localStorage.getItem("lo-online")!=="0";}catch(e){return true;}}
 function netMuted(){try{return JSON.parse(localStorage.getItem("lo-muted")||"[]");}catch(e){return[];}}
