@@ -87,6 +87,8 @@ body[data-state="title"] #titleBg,body[data-state="saves"] #titleBg{display:bloc
 #titleBg .tb-img{position:absolute;inset:-4%;background:#1a1430 url(assets/tex/title.jpg) center 42%/cover no-repeat;animation:tbKen 46s ease-in-out infinite alternate;will-change:transform}
 #titleBg .tb-fog{position:absolute;left:-50%;right:-50%;bottom:8%;height:38%;background:radial-gradient(ellipse at 30% 60%,rgba(255,190,160,.18),transparent 60%),radial-gradient(ellipse at 75% 50%,rgba(255,160,150,.14),transparent 55%);animation:tbFog 60s linear infinite alternate;filter:blur(8px)}
 #titleBg canvas{position:absolute;inset:0;width:100%;height:100%}
+#titleVid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 2.2s ease}
+#titleVid.ready{opacity:1}
 @media (min-aspect-ratio:19/10){#titleBg .tb-img{background-position:center 64%}}
 @keyframes tbKen{from{transform:scale(1) translate(0,0)}to{transform:scale(1.09) translate(-1.6%,-1.2%)}}
 @keyframes tbFog{from{transform:translateX(-6%)}to{transform:translateX(6%)}}
@@ -248,7 +250,7 @@ window.addEventListener("error",function(e){var b=document.getElementById("err")
 </div>
 
 <!-- title -->
-<div id="titleBg" aria-hidden="true"><div class="tb-img"></div><div class="tb-fog"></div><canvas id="titleFx"></canvas></div>
+<div id="titleBg" aria-hidden="true"><div class="tb-img"></div><video id="titleVid" muted loop playsinline preload="none"></video><div class="tb-fog"></div><canvas id="titleFx"></canvas></div>
 <div class="screen" id="scrTitle">
   <div class="logo">
     <div class="sub">PROJECT</div>
@@ -2838,6 +2840,12 @@ function applyViewOffset(){
       var r=p.s*3.2,gr=g.createRadialGradient(p.x,p.y,0,p.x,p.y,r);gr.addColorStop(0,"rgba(255,226,170,"+(.85*f)+")");gr.addColorStop(1,"rgba(255,150,90,0)");g.fillStyle=gr;g.fillRect(p.x-r,p.y-r,r*2,r*2);}
     g.globalCompositeOperation="source-over";}
   requestAnimationFrame(tick);})();
+/* the slow orbit around Arcelia: a pre-rendered loop, loaded only after the still is up */
+(function(){var v=$("titleVid"),want=false,asked=false,rm=false;try{rm=matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){}
+  v.addEventListener("canplaythrough",function(){v.classList.add("ready");if(want)v.play().catch(function(){});});
+  setInterval(function(){var on=(state==="title"||state==="saves")&&!document.hidden&&!rm;
+    if(on&&!asked&&assetsReady){asked=true;v.src="assets/tex/title.mp4";v.load();}
+    if(on!==want){want=on;if(on&&v.classList.contains("ready"))v.play().catch(function(){});else if(!on)v.pause();}},500);})();
 function goTitle(){clearProjs();setState("title");}
 $("btnStart").addEventListener("click",function(){renderSlots();setState("saves");});
 $("savesBack").addEventListener("click",goTitle);
@@ -3301,7 +3309,8 @@ function ambient(dt){
     sr1.material.emissiveIntensity=1.6+Math.sin(time*1.5)*.4;}
   if(gateOpen&&gateT<1)gateT=Math.min(1,gateT+dt*.6);
   gateDoors.forEach(function(h){h.rotation.y=h.userData.s*-easeS(gateT)*1.75;});
-  if(state==="play"&&P){var tg=questTarget();
+  if(camOverride)beacon.visible=false;
+  else if(state==="play"&&P){var tg=questTarget();
     if(tg){var bd=Math.hypot(tg.x-player.position.x,tg.z-player.position.z);beacon.visible=bd>7;beacon.position.set(tg.x,H(tg.x,tg.z)+35,tg.z);beacon.material.opacity=.16+Math.sin(time*2.2)*.06;}
     else beacon.visible=false;}
   else beacon.visible=false;
@@ -3408,14 +3417,22 @@ function loop(now){
   pops=pops.filter(function(p){return !p.dead;});
   render(raw);updateHud();
 }
-window.__lo=window.__lo||{};if(location.protocol==='file:'||location.hostname==='localhost')window.__lo={sunset:function(c,t,sd,gl){sunDir.set(sd[0],sd[1],sd[2]).normalize();sun.color.setHex(0xffa060);sun.intensity=3.4;hemi.color.setHex(0xd8a0b0);hemi.groundColor.setHex(0x40282a);hemi.intensity=.6;
+window.__lo=window.__lo||{};if(location.protocol==='file:'||location.hostname==='localhost')window.__lo={camAt:function(c,t){camOverride={p:new THREE.Vector3(c[0],c[1],c[2]),t:new THREE.Vector3(t[0],t[1],t[2])};},sunset:function(c,t,sd,gl){sunDir.set(sd[0],sd[1],sd[2]).normalize();sun.color.setHex(0xffa060);sun.intensity=3.4;hemi.color.setHex(0xd8a0b0);hemi.groundColor.setHex(0x40282a);hemi.intensity=.6;
     scene.fog.color.setHex(0xd98a6e).convertSRGBToLinear();scene.fog.density=.0042;renderer.toneMappingExposure=1.08;
-    var cv=document.createElement("canvas");cv.width=1024;cv.height=576;var g=cv.getContext("2d"),gr=g.createLinearGradient(0,0,0,576);
-    gr.addColorStop(0,"#17163a");gr.addColorStop(.25,"#3c2d62");gr.addColorStop(.45,"#93507c");gr.addColorStop(.6,"#e27a5e");gr.addColorStop(.72,"#ffb468");gr.addColorStop(1,"#ffe0a4");g.fillStyle=gr;g.fillRect(0,0,1024,576);
-    var sx=(gl&&gl[0]||.3)*1024,sy=(gl&&gl[1]||.62)*576,rg=g.createRadialGradient(sx,sy,0,sx,sy,420);rg.addColorStop(0,"rgba(255,246,214,1)");rg.addColorStop(.06,"rgba(255,226,160,.95)");rg.addColorStop(.25,"rgba(255,170,100,.45)");rg.addColorStop(1,"rgba(255,140,90,0)");
-    g.fillStyle=rg;g.fillRect(0,0,1024,576);
-    g.filter="blur(10px)";for(var ci=0;ci<60;ci++){var cx=Math.random()*1100-40,cy=90+Math.random()*250,cw=40+Math.random()*150,lit=cy/340;g.fillStyle="rgba("+Math.round(110+lit*140)+","+Math.round(60+lit*70)+","+Math.round(110-lit*20)+","+(.12+Math.random()*.18)+")";g.beginPath();g.ellipse(cx,cy,cw,6+Math.random()*16,(Math.random()-.5)*.08,0,Math.PI*2);g.fill();}g.filter="none";
-    var tx=new THREE.CanvasTexture(cv);tx.encoding=THREE.sRGBEncoding;scene.background=tx;sky.visible=false;
+    var W=1024,Hh=512,cv=document.createElement("canvas");cv.width=W;cv.height=Hh;var g=cv.getContext("2d"),img=g.createImageData(W,Hh),D=img.data;
+    var sd=sunDir.clone().normalize(),su=Math.atan2(sd.z,sd.x)/(Math.PI*2)+.5,sv=Math.asin(sd.y)/Math.PI+.5;
+    var stops=[[-.2,[60,36,40]],[0,[255,196,120]],[.05,[250,150,96]],[.14,[214,104,118]],[.3,[124,70,124]],[.55,[52,42,96]],[1.58,[18,16,44]]];
+    function skyCol(el){for(var k=1;k<stops.length;k++)if(el<=stops[k][0]){var t=(el-stops[k-1][0])/(stops[k][0]-stops[k-1][0]),A2=stops[k-1][1],B2=stops[k][1];return[A2[0]+(B2[0]-A2[0])*t,A2[1]+(B2[1]-A2[1])*t,A2[2]+(B2[2]-A2[2])*t];}return stops[stops.length-1][1];}
+    for(var y=0;y<Hh;y++){var v=1-(y+.5)/Hh,el=(v-.5)*Math.PI,base=skyCol(Math.max(-.2,el));
+      for(var x=0;x<W;x++){var u=(x+.5)/W,du=Math.abs(u-su);du=Math.min(du,1-du)*Math.PI*2;var dv=(v-sv)*Math.PI,ang=Math.sqrt(du*du*Math.cos(el)*Math.cos(el)+dv*dv);
+        var glow=Math.exp(-ang*ang/.05)*.9+Math.exp(-ang*ang/.6)*.35,disc=ang<.035?1:0,i4=(y*W+x)*4;
+        D[i4]=Math.min(255,base[0]+glow*255+disc*80);D[i4+1]=Math.min(255,base[1]+glow*170+disc*80);D[i4+2]=Math.min(255,base[2]+glow*90+disc*60);D[i4+3]=255;}}
+    g.putImageData(img,0,0);
+    g.filter="blur(6px)";for(var ci=0;ci<140;ci++){var cx=Math.random()*W,cy=Hh*(.5-(.04+Math.random()*.22)),cw=20+Math.random()*90,lit=1-(.5-cy/Hh)/.26;
+      var cdu=Math.abs(cx/W-su);cdu=Math.min(cdu,1-cdu);var near=Math.max(0,1-cdu*4);
+      g.fillStyle="rgba("+Math.round(120+lit*100+near*30)+","+Math.round(60+lit*60+near*40)+","+Math.round(100-lit*10)+","+(.14+Math.random()*.18)+")";g.beginPath();g.ellipse(cx,cy,cw,3+Math.random()*7,0,0,Math.PI*2);g.fill();}g.filter="none";
+    var tx=new THREE.CanvasTexture(cv);tx.encoding=THREE.sRGBEncoding;tx.mapping=THREE.EquirectangularReflectionMapping;scene.background=tx;sky.visible=false;
+    shc.left=-95;shc.right=95;shc.top=95;shc.bottom=-95;shc.far=320;shc.updateProjectionMatrix();sun.shadow.mapSize.set(4096,4096);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}
     camOverride={p:new THREE.Vector3(c[0],c[1],c[2]),t:new THREE.Vector3(t[0],t[1],t[2])};document.body.classList.add("shot");},
   probe:function(x0,z0,x1,z1){var p=new THREE.Vector3(x0,0,z0),L=Math.hypot(x1-x0,z1-z0),n=Math.ceil(L/.1);for(var i=0;i<n*2;i++){var dx=x1-p.x,dz=z1-p.z,d=Math.hypot(dx,dz);if(d<.15)break;p.x+=dx/d*.1;p.z+=dz/d*.1;collide(p,.4);}return[+p.x.toFixed(1),+p.z.toFixed(1),+groundY(p.x,p.z).toFixed(1)];},get pos(){return player.position;},MH:MH,rebuild:function(j){rebuildPlayer(j);},view:function(y,f){previewYaw=y;faceView=f;},get A(){return A;},setCam:function(y,p,d){cam.yaw=y;cam.pitch=p;cam.dist=d;},get state(){return state;},get P(){return P;},get enemies(){return enemies;},talkKnight:function(){nearNPC=knight;talk();},talk:talk,tryAttack:tryAttack,setStep:function(s){if(P)advanceQuest(s);},tp:function(x,z){player.position.set(x,groundY(x,z),z);}};
 setState("title");
