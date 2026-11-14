@@ -2403,7 +2403,7 @@ function closeGate(){gateOpen=false;gateT=0;gateObs.forEach(function(o){o.off=fa
 /* ---------- tutorial hints: each one shows once per save ---------- */
 var TIP_KEYS=["move","talk","attack","windup","just","guard","sp"];
 var TIPS={
-  move:["WASD で移動、Shift 長押しでダッシュ、Space でジャンプ。マウスをドラッグすると視点を動かせます。","左下のスティックで移動。「ダッシュ」で走る（もう一度押すと歩きに戻る）、「ジャンプ」で跳べます。画面をなぞると視点を動かせます。"],
+  move:["WASD で移動、Shift 長押しでダッシュ、Space でジャンプ。マウスをドラッグすると視点を動かせます。","左下のスティックで移動。「ダッシュ」を押している間は走る、「ジャンプ」で跳べます。画面をなぞると視点を動かせます。"],
   talk:["光の柱が目的地の目印です。老騎士に近づいて E で話しかけよう。","光の柱が目的地の目印です。老騎士に近づいて「話す」を押そう。"],
   attack:["左クリックで攻撃。続けて押すとコンボになります。","「攻撃」ボタンで攻撃。続けて押すとコンボになります。"],
   windup:["敵の目が赤く光ったら攻撃の合図。Shift を短く押して回避しよう。","敵の目が赤く光ったら攻撃の合図。「回避」で避けよう。"],
@@ -2541,8 +2541,10 @@ tbtn("tDodge",function(){tryDodge()});
 tbtn("tGuard",function(){startGuard()},function(){endGuard()});
 tbtn("tTalk",function(){talk()});
 tbtn("tJump",function(){tryJump()});
-(function(){var el=$("tDash");el.addEventListener("touchstart",function(e){e.preventDefault();e.stopPropagation();if(!running||paused)return;dashToggle=!dashToggle;el.classList.toggle("on",dashToggle);},{passive:false});
-  el.addEventListener("touchend",function(e){e.preventDefault();},{passive:false});})();
+(function(){var el=$("tDash");
+  el.addEventListener("touchstart",function(e){e.preventDefault();e.stopPropagation();if(!running||paused)return;dashHeld=true;el.classList.add("on");},{passive:false});
+  var up=function(e){e.preventDefault();dashHeld=false;el.classList.remove("on");};
+  el.addEventListener("touchend",up,{passive:false});el.addEventListener("touchcancel",up,{passive:false});})();
 
 /* =========================================================
    combat
