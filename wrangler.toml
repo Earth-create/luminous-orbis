@@ -8,6 +8,14 @@ workers_dev = true
 name = "WORLD"
 class_name = "World"
 
+[[durable_objects.bindings]]
+name = "SOCIAL"
+class_name = "Social"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["World"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Social"]

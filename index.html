@@ -59,17 +59,42 @@ body.shot .hud,body.shot #touch,body.shot #tipBox,body.shot #gfxAsk{display:none
 #netBadge::before{content:"";width:8px;height:8px;border-radius:50%;background:#888}
 #netBadge.on::before{background:#5fd068}#netBadge.wait::before{background:#e8c477}
 #tags{position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden}body:not([data-state="play"]) #tags{display:none}
-.ntag{position:absolute;transform:translate(-50%,-100%);font-size:13px;font-weight:700;color:#f3e6c8;text-shadow:0 0 3px #000,0 1px 2px #000;white-space:nowrap}
+.ntag{position:absolute;left:0;top:0;transform:translate(-50%,-100%);font-size:13px;font-weight:700;color:#f3e6c8;text-shadow:0 0 3px #000,0 1px 2px #000;white-space:nowrap;pointer-events:auto;cursor:pointer;padding:6px 10px;margin-top:-6px;will-change:transform}
+.ntag.fr{color:#9fe0a8}.ntag.fr::before{content:"★ ";font-size:11px}
+#tagMenu{position:fixed;z-index:7;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 10px;border-radius:8px;background:rgba(14,12,9,.9);border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,.45)}
+#tagMenu[hidden]{display:none}#tagMenu b{font-size:13px;color:var(--moon)}#tagMenu .btn{padding:7px 12px;font-size:13px}
+.fcard{width:min(460px,100%);display:flex;flex-direction:column;gap:6px}
+.fhead{display:flex;align-items:center;gap:8px}.fhead h2{flex:1;margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fcard h3{font-size:12px;letter-spacing:.12em;color:var(--relic);margin:10px 0 6px;font-weight:700}
+.frow{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:rgba(0,0,0,.25);margin-bottom:6px}
+.frow .nm{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.frow .dot{width:8px;height:8px;border-radius:50%;background:#666;flex:none}.frow .dot.on{background:#5fd068}
+.frow .st{font-size:11px;color:var(--muted)}.frow .btn{padding:6px 10px;font-size:12px}
+.frow.click{cursor:pointer}.frow.click:hover{border-color:var(--relic)}
+.frow .un{background:var(--hp);color:#fff;border-radius:9px;padding:0 7px;font-size:11px;font-weight:700}
+.fhint{font-size:12px!important;margin:8px 0 0!important}
+#fLog{display:flex;flex-direction:column;gap:5px;height:min(42vh,320px);overflow-y:auto;padding:6px;border:1px solid var(--line);border-radius:6px;background:rgba(0,0,0,.3)}
+#fLog .m{max-width:80%;padding:5px 9px;border-radius:8px;font-size:14px;line-height:1.45;word-break:break-word;background:rgba(255,255,255,.07);align-self:flex-start}
+#fLog .m.me{align-self:flex-end;background:rgba(232,196,119,.2)}#fLog .m small{display:block;font-size:10px;color:var(--muted)}
+#fLog .empty{color:var(--muted);font-size:12px;margin:auto}
+#fForm{display:flex;gap:6px;margin-top:6px}
+#fIn{flex:1;min-width:0;font:inherit;font-size:16px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:rgba(10,8,6,.85);color:var(--text)}
 #chatBox{left:max(12px,env(safe-area-inset-left,0px));bottom:calc(52px + env(safe-area-inset-bottom,0px));width:min(380px,46vw);pointer-events:none;display:flex;flex-direction:column;gap:6px}
+#chatBox{pointer-events:none}#chatLog{pointer-events:none}
 body:not([data-state="play"]) #chatBox{display:none}
 #chatLog{max-height:30vh;overflow-y:auto;display:flex;flex-direction:column;gap:3px;pointer-events:auto;scrollbar-width:thin}
 #chatLog .cl{background:rgba(10,8,6,.55);border-radius:6px;padding:3px 8px;font-size:13px;line-height:1.45;color:var(--text);word-break:break-word;transition:opacity .8s;cursor:pointer}
 #chatLog .cl b{color:var(--moon);font-weight:700}#chatLog .cl.me b{color:#9fd3ff}#chatLog .cl.sys{color:var(--muted);font-size:12px;cursor:default}
-#chatLog .cl.old{opacity:0;pointer-events:none}#chatBox.open #chatLog .cl.old{opacity:1;pointer-events:auto}
-#chatLog .mute{margin-left:8px;padding:2px 8px;font-size:11px}
-#chatForm{display:flex;gap:6px;pointer-events:auto}#chatForm[hidden]{display:none}
-#chatIn{flex:1;min-width:0;font:inherit;font-size:16px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:rgba(10,8,6,.85);color:var(--text)}
-@media (hover:none){#chatBox{bottom:auto;top:calc(130px + env(safe-area-inset-top,0px));width:min(340px,44vw)}#chatLog{max-height:24vh}}
+#chatLog .cl.old{opacity:0}
+/* phones: compact HUD so nothing overlaps */
+@media (hover:none){
+  #status{transform:scale(.74);transform-origin:0 0;width:min(270px,44vw)}
+  #quest{left:max(12px,env(safe-area-inset-left,0px));transform:none;text-align:left;top:calc(104px + env(safe-area-inset-top,0px));max-width:min(240px,32vw)}
+  #quest small{font-size:9px;letter-spacing:.14em}#quest div{font-size:12px}
+  #topright{gap:6px}#topright .btn{padding:6px 10px;font-size:12px}#netBadge{font-size:11px;padding:5px 8px}
+  #chatBox{bottom:auto;top:calc(52px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:min(340px,38vw)}#chatLog{max-height:22vh}
+  #chatLog .cl{font-size:12px;text-align:center}
+}
 #tipBox{left:50%;transform:translateX(-50%);bottom:calc(64px + env(safe-area-inset-bottom,0px));max-width:min(560px,calc(100vw - 32px));background:rgba(14,12,10,.88);border:1px solid rgba(214,180,110,.55);border-radius:10px;padding:10px 14px 10px 12px;color:var(--text);font-size:14px;line-height:1.5;pointer-events:auto;cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,.4)}
 #tipBox b{color:var(--moon);font-weight:700;margin-right:6px}
 #banner small{display:block;font-family:var(--f-body);font-size:14px;letter-spacing:.04em;font-weight:400;color:var(--text)}
@@ -191,8 +216,8 @@ body[data-state="title"] #titleBg,body[data-state="saves"] #titleBg{display:bloc
 /* touch controls */
 #touch{position:fixed;inset:0;z-index:6;pointer-events:none;display:none}
 body[data-state="play"] #touch{display:block}
-#stick{position:absolute;left:calc(28px + env(safe-area-inset-left,0px));bottom:calc(30px + env(safe-area-inset-bottom,0px));width:120px;height:120px;border-radius:50%;border:2px solid rgba(243,230,200,.35);background:rgba(14,12,9,.35);pointer-events:auto}
-#knob{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:rgba(243,230,200,.5)}
+#stick{position:absolute;left:calc(18px + env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:100px;height:100px;border-radius:50%;border:2px solid rgba(243,230,200,.35);background:rgba(14,12,9,.35);pointer-events:auto}
+#knob{position:absolute;left:29px;top:29px;width:42px;height:42px;border-radius:50%;background:rgba(243,230,200,.5)}
 #tbtns{position:absolute;right:calc(20px + env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));width:236px;height:200px;pointer-events:none}
 .tb{position:absolute;border-radius:50%;border:2px solid var(--line);background:rgba(14,12,9,.6);color:var(--text);font-size:12px;pointer-events:auto;display:flex;align-items:center;justify-content:center}
 .tb.active{background:rgba(232,196,119,.35)}
@@ -204,7 +229,7 @@ body[data-state="play"] #touch{display:block}
 #tDash{width:54px;height:54px;right:162px;bottom:4px;font-size:11px}
 #tDash.on{background:rgba(232,196,119,.45);border-color:var(--relic);color:#fff}
 @media (hover:hover) and (pointer:fine){#touch,body[data-state="play"] #touch{display:none}}
-@media (hover:none){#help{display:none!important}#tipBox{left:calc(20px + env(safe-area-inset-left,0px));transform:none;bottom:calc(164px + env(safe-area-inset-bottom,0px));max-width:min(330px,44vw);font-size:13px;padding:8px 10px}}
+@media (hover:none){#help{display:none!important}#tipBox{left:calc(20px + env(safe-area-inset-left,0px));transform:none;bottom:calc(130px + env(safe-area-inset-bottom,0px));max-width:min(330px,44vw);font-size:13px;padding:8px 10px}}
 @media (max-height:540px){
   .card{padding:14px 16px;max-height:92vh}
   #scrTitle{padding-bottom:calc(5vh + env(safe-area-inset-bottom,0px))}
@@ -238,14 +263,14 @@ window.addEventListener("error",function(e){var b=document.getElementById("err")
 <div class="hud" id="bossbar" hidden><b id="bossName"></b><div class="bar"><i id="bossFill"></i></div></div>
 <div class="hud" id="topright">
   <span id="netBadge" class="hud off" hidden></span>
-  <button class="btn" id="openChat" type="button" hidden>チャット</button>
+  <button class="btn" id="openChat" type="button" hidden>フレンド<span class="badge" id="fBadge" hidden>0</span></button>
   <button class="btn" id="openStats" type="button">ステータス<span class="badge" id="spBadge" hidden>0</span></button>
   <button class="btn" id="openMenu" type="button">メニュー</button>
 </div>
 <div class="hud" id="banner"></div>
 <div id="tags" aria-hidden="true"></div>
-<div class="hud" id="chatBox"><div id="chatLog" aria-live="polite"></div>
-  <form id="chatForm" hidden><input id="chatIn" maxlength="80" autocomplete="off" enterkeyhint="send" placeholder="メッセージ（80文字まで）" aria-label="チャットメッセージ"><button class="btn gold" type="submit">送信</button></form></div>
+<div class="hud" id="chatBox"><div id="chatLog" aria-live="polite"></div></div>
+<div id="tagMenu" hidden><b id="tmName"></b><button class="btn gold" id="tmBtn" type="button">フレンド申請</button></div>
 <div class="hud" id="tipBox" hidden role="status"></div>
 <div class="hud" id="prompt">E：話す</div>
 <div class="hud" id="help">WASD 移動 ・ Shift長押し ダッシュ ・ Space ジャンプ ・ ドラッグ 視点 ・ 左クリック 攻撃 ・ Shift短押し 回避 ・ 右クリック/F ガード ・ E 話す ・ C ステータス</div>
@@ -360,6 +385,23 @@ window.addEventListener("error",function(e){var b=document.getElementById("err")
   </div>
 </div>
 <!-- menu -->
+<div class="screen" id="friendsModal" hidden>
+  <div class="card fcard">
+    <div class="fhead"><button class="btn" id="fBack" type="button" hidden>← 戻る</button><h2 id="fTitle">フレンド</h2><button class="btn" id="fClose" type="button">閉じる</button></div>
+    <div id="fListView">
+      <div id="fReqWrap" hidden><h3>フレンド申請</h3><div id="fReqs"></div></div>
+      <h3>フレンド <span id="fCount"></span></h3>
+      <div id="fList"></div>
+      <p class="fhint">近くにいるプレイヤーの名前をタップすると、フレンド申請を送れます。フレンドになった人とだけメッセージをやりとりできます。</p>
+      <p class="fhint" id="fState"></p>
+    </div>
+    <div id="fChatView" hidden>
+      <div id="fLog"></div>
+      <form id="fForm"><input id="fIn" maxlength="80" autocomplete="off" enterkeyhint="send" placeholder="メッセージ（80文字まで）" aria-label="メッセージ"><button class="btn gold" type="submit">送信</button></form>
+      <div class="actions"><button class="btn danger" id="fRemove" type="button">フレンドを解除</button></div>
+    </div>
+  </div>
+</div>
 <div class="screen" id="menuModal" hidden>
   <div class="card">
     <h2>メニュー</h2>
@@ -480,7 +522,7 @@ renderer.setSize(innerWidth,innerHeight);
 renderer.outputEncoding=THREE.sRGBEncoding;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.0;
-renderer.shadowMap.enabled=true;
+renderer.shadowMap.enabled=true;renderer.shadowMap.autoUpdate=false;var frameN=0;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 $("game").appendChild(renderer.domElement);
 var scene=new THREE.Scene();
@@ -2501,7 +2543,7 @@ addEventListener("keydown",function(e){
   if(state!=="play")return;
   if(e.target&&e.target.tagName==="INPUT")return;
   if(dlg.open){if(e.code==="KeyE"||e.code==="Enter"||e.code==="Space"){e.preventDefault();advanceDlg();}return;}
-  if(e.code==="Escape"){if(!$("statsModal").hidden)toggleStats();else toggleMenu();return;}
+  if(e.code==="Escape"){if(!$("friendsModal").hidden)friendsOpen(false);else if(!$("statsModal").hidden)toggleStats();else toggleMenu();return;}
   if(paused)return;
   keys[e.code]=true;
   if(e.code==="Space"){e.preventDefault();tryJump();}
@@ -2536,7 +2578,7 @@ cv.addEventListener("wheel",function(e){if(state==="play")cam.dist=clamp(cam.dis
 var stick=$("stick"),knob=$("knob"),stickId=null,camTouchId=null,camLast={x:0,y:0};
 stick.addEventListener("touchstart",function(e){e.preventDefault();stickId=e.changedTouches[0].identifier;moveStick(e.changedTouches[0]);},{passive:false});
 function moveStick(t){
-  var r=stick.getBoundingClientRect(),cx=r.left+60,cy=r.top+60,dx=t.clientX-cx,dy=t.clientY-cy,l=Math.hypot(dx,dy),m=45;
+  var r=stick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=t.clientX-cx,dy=t.clientY-cy,l=Math.hypot(dx,dy),m=r.width*.38;
   if(l>m){dx=dx/l*m;dy=dy/l*m;}
   knob.style.transform="translate("+dx+"px,"+dy+"px)";
   stickVec.x=dx/m;stickVec.z=dy/m;
@@ -2817,8 +2859,8 @@ function updateStatsUI(){
   var total=0;for(var s in P.stats)total+=P.stats[s];
   $("resetStats").disabled=total===0||P.gold<100;
 }
-function toggleStats(){if(dlg.open)return;var m=$("statsModal");if(m.hidden){if(!$("menuModal").hidden)return;updateStatsUI();m.hidden=false;paused=true;}else{m.hidden=true;paused=false;}}
-function toggleMenu(){if(dlg.open)return;var m=$("menuModal");if(m.hidden){if(!$("statsModal").hidden)return;$("menuInfo").textContent=(P.name||"旅人")+"　"+JOBS[P.job].name+" Lv "+P.lv+"　プレイ時間 "+fmtTime(P.time);m.hidden=false;paused=true;}else{m.hidden=true;paused=false;}}
+function toggleStats(){if(dlg.open)return;var m=$("statsModal");if(m.hidden){if(!$("menuModal").hidden||!$("friendsModal").hidden)return;updateStatsUI();m.hidden=false;paused=true;}else{m.hidden=true;paused=false;}}
+function toggleMenu(){if(dlg.open)return;var m=$("menuModal");if(m.hidden){if(!$("statsModal").hidden||!$("friendsModal").hidden)return;$("menuInfo").textContent=(P.name||"旅人")+"　"+JOBS[P.job].name+" Lv "+P.lv+"　プレイ時間 "+fmtTime(P.time);m.hidden=false;paused=true;}else{m.hidden=true;paused=false;}}
 $("openStats").addEventListener("click",toggleStats);$("closeStats").addEventListener("click",toggleStats);
 $("openMenu").addEventListener("click",toggleMenu);$("mClose").addEventListener("click",toggleMenu);
 $("mSave").addEventListener("click",function(){saveGame(false);toggleMenu();});
@@ -2878,43 +2920,43 @@ function netMuted(){try{return JSON.parse(localStorage.getItem("lo-muted")||"[]"
 function netAppStr(){return encodeApp(P.app||{});}
 function netBadge(){var b=$("netBadge");if(!b)return;
   if(!ONLINE_URL){b.hidden=true;$("openChat").hidden=true;return;}
-  b.hidden=state!=="play";$("openChat").hidden=!NET.open||state!=="play";
+  b.hidden=state!=="play";$("openChat").hidden=!(SOC.open||NET.open)||state!=="play";
   b.className="hud "+(NET.open?"on":NET.ws?"wait":"off");
   b.textContent=NET.open?"オンライン "+(NET.count)+"人":NET.ws?"接続中…":netWanted()?"オフライン（再接続待ち）":"オフライン";}
 function netConnect(){
   if(!ONLINE_URL||NET.ws||!netWanted()||state!=="play"||!P)return;
   var ws;try{ws=new WebSocket(ONLINE_URL+"?ch="+NET.ch);}catch(e){return;}
   NET.ws=ws;NET.closing=false;netBadge();
-  ws.onopen=function(){ws.send(JSON.stringify({t:"hello",name:P.name||"旅人",job:P.job,app:netAppStr()}));};
+  ws.onopen=function(){ws.send(JSON.stringify({t:"hello",p:myId().p,name:P.name||"旅人",job:P.job,app:netAppStr()}));};
   ws.onmessage=function(e){var m;try{m=JSON.parse(e.data);}catch(er){return;}netMsg(m);};
   ws.onclose=function(){var was=NET.open;NET.ws=null;NET.open=false;netClear();netBadge();
     if(was)chatSys("サーバーとの接続が切れました");
     if(!NET.closing&&state==="play"&&netWanted()){var w=Math.min(30000,2000*Math.pow(2,NET.retry++));clearTimeout(NET.timer);NET.timer=setTimeout(function(){NET.timer=null;netConnect();},w);}};
   ws.onerror=function(){};}
-function netClose(){NET.closing=true;clearTimeout(NET.timer);NET.timer=null;if(NET.ws){try{NET.ws.close();}catch(e){}}NET.ws=null;NET.open=false;netClear();netBadge();}
+function netClose(){socClose();NET.closing=true;clearTimeout(NET.timer);NET.timer=null;if(NET.ws){try{NET.ws.close();}catch(e){}}NET.ws=null;NET.open=false;netClear();netBadge();}
 function netClear(){for(var k in NET.others)netRemove(k);NET.count=0;}
 function netMsg(m){
   if(m.t==="welcome"){NET.open=true;NET.retry=0;NET.id=m.id;NET.lastSent=null;(m.players||[]).forEach(netAdd);NET.count=(m.players||[]).length+1;
-    $("chatLog").innerHTML="";(m.chat||[]).forEach(function(c){chatLine(c,true);});chatSys("オンラインの世界につながりました（チャンネル"+NET.ch+"）");}
+    chatSys("オンラインの世界につながりました（チャンネル"+NET.ch+"）");}
   else if(m.t==="join"){netAdd(m.p);NET.count++;chatSys((m.p.n||"旅人")+" がやってきた");}
   else if(m.t==="l"){var o=NET.others[m.id];if(o){chatSys(o.n+" が去っていった");netRemove(m.id);NET.count=Math.max(1,NET.count-1);}}
   else if(m.t==="s"){var p=NET.others[m.id];if(p){p.buf.push({t:performance.now(),s:m.s});if(p.buf.length>30)p.buf.shift();}}
   else if(m.t==="look"){var q=NET.others[m.id];if(q){q.n=m.n;q.j=m.j;q.a=m.a;netBuild(q);}}
-  else if(m.t==="c")chatLine(m,false);
   else if(m.t==="sys")chatSys(m.m);
   else if(m.t==="full"){NET.ch=NET.ch%20+1;}
   netBadge();}
 /* ---- other players ---- */
-function netAdd(p){if(!p||p.id===NET.id||NET.others[p.id])return;var o={id:p.id,n:p.n||"旅人",j:p.j,a:p.a||"",buf:[{t:performance.now(),s:p.s||[0,0,8,0,0]}],ph:0,atk:0,g:new THREE.Group(),rig:null};
+function netAdd(p){if(!p||p.id===NET.id||NET.others[p.id])return;var o={id:p.id,p:p.p||"",n:p.n||"旅人",j:p.j,a:p.a||"",buf:[{t:performance.now(),s:p.s||[0,0,8,0,0]}],ph:0,atk:0,g:new THREE.Group(),rig:null};
   scene.add(o.g);NET.others[p.id]=o;netBuild(o);}
-function netRemove(id){var o=NET.others[id];if(!o)return;scene.remove(o.g);if(o.rig)o.rig.B.dispose();if(o.tag)o.tag.remove();delete NET.others[id];}
+function netRemove(id){var o=NET.others[id];if(!o)return;if(TM.o===o)tagMenuClose();scene.remove(o.g);if(o.rig)o.rig.B.dispose();if(o.tag)o.tag.remove();delete NET.others[id];}
 function netBuild(o){
   if(o.rig){o.g.remove(o.rig.root);o.rig.B.dispose();o.rig=null;}
   if(Object.keys(NET.others).filter(function(k){return NET.others[k].rig;}).length>=24)return;   /* draw at most 24 others */
   var ap=Object.assign(defaultApp(),decodeApp(o.a));ap.outfit=JOBS[o.j]?o.j:"warrior";ap.beard=false;
   o.rig=buildHuman(ap);o.g.add(o.rig.root);poseRest(o.rig);
-  if(!o.tag){o.tag=document.createElement("div");o.tag.className="ntag";$("tags").appendChild(o.tag);}
-  o.tag.textContent=o.n;o.tagY=(o.rig.faceY||1.7)*1.03+.38;}
+  if(!o.tag){o.tag=document.createElement("div");o.tag.className="ntag";$("tags").appendChild(o.tag);
+    o.tag.addEventListener("click",function(e){e.stopPropagation();tagMenu(o);});o.tag.addEventListener("touchstart",function(e){e.stopPropagation();},{passive:true});}
+  o.tag.textContent=o.n;o.tag.classList.toggle("fr",!!(o.p&&SOC.friends[o.p]));o.tagY=(o.rig.faceY||1.7)*1.03+.38;}
 function netUpdate(dt){
   if(!NET.open)return;
   var rt=performance.now()-160;
@@ -2926,18 +2968,21 @@ function netUpdate(dt){
     o.g.position.set(x,y,z);o.g.rotation.y=r;
     var d=Math.hypot(x-player.position.x,z-player.position.z);o.g.visible=d<90;if(!o.g.visible){if(o.tag)o.tag.style.display="none";continue;}
     setLOD(o.rig.root,d>LOD_NPC,o.rig.details);
-    if(o.tag){vtmp.set(x,y+o.tagY,z).project(camera);var on=d<40&&vtmp.z<1&&Math.abs(vtmp.x)<1.1&&Math.abs(vtmp.y)<1.1;o.tag.style.display=on?"block":"none";
-      if(on){o.tag.style.left=((vtmp.x+1)/2*innerWidth)+"px";o.tag.style.top=((1-vtmp.y)/2*innerHeight)+"px";o.tag.style.opacity=d<25?1:Math.max(0,(40-d)/15);}}
-    var A2=o.rig,amt=clamp(sp/6,0,1);o.mv=lerp(o.mv||0,amt,Math.min(1,dt*8));
+    if(o.tag){vtmp.set(x,y+o.tagY,z).project(camera);var on=d<40&&vtmp.z<1&&Math.abs(vtmp.x)<1.1&&Math.abs(vtmp.y)<1.1,dsp=on?"block":"none";if(o.tag.style.display!==dsp)o.tag.style.display=dsp;
+      if(on){var tx=Math.round((vtmp.x+1)/2*innerWidth),ty=Math.round((1-vtmp.y)/2*innerHeight);if(tx!==o.tx||ty!==o.ty){o.tx=tx;o.ty=ty;o.tag.style.transform="translate("+tx+"px,"+ty+"px) translate(-50%,-100%)";}
+        var op=d<25?1:Math.round(Math.max(0,(40-d)/15)*10)/10;if(op!==o.op){o.op=op;o.tag.style.opacity=op;}}}
+    o.sk=(o.sk||0)+1;o.adt=(o.adt||0)+dt;if(d>30&&o.sk%3)continue;   /* far players: animate every 3rd frame */
+    var adt=o.adt;o.adt=0;
+    var A2=o.rig,amt=clamp(sp/6,0,1);o.mv=lerp(o.mv||0,amt,Math.min(1,adt*8));
     poseRest(A2);
     if(code===6){A2.hips.rotation.x=-1.45;A2.hips.position.y=A2.hipY-.75;}
     else if(code===2){A2.LL.th.rotation.x=-.7;A2.LL.kn.rotation.x=1.1;A2.LR.th.rotation.x=-.25;A2.LR.kn.rotation.x=.6;A2.AR.sh.rotation.x-=.5;A2.AL.sh.rotation.x-=.5;}
     else if(code===4){A2.hips.rotation.x=.5;A2.hips.position.y=A2.hipY-.3;A2.LL.th.rotation.x=-1;A2.LL.kn.rotation.x=1.4;A2.LR.kn.rotation.x=1;}
-    else{A2.walkPh+=dt*(o.mv>.02?(code===1?11+sp:8+sp):0);walkAnim(A2,code===1?Math.min(1.35,o.mv*1.35):o.mv,code!==3&&code!==5);
+    else{A2.walkPh+=adt*(o.mv>.02?(code===1?11+sp:8+sp):0);walkAnim(A2,code===1?Math.min(1.35,o.mv*1.35):o.mv,code!==3&&code!==5);
       if(code===1)A2.spine.rotation.x+=.22;
-      if(code===3){o.atk+=dt*9;var sw=Math.sin(o.atk);A2.AR.sh.rotation.set(-1.4-sw*.9,0,.25);A2.AR.el.rotation.x=-.5+sw*.3;A2.spine.rotation.y+=sw*.25;}else o.atk=0;
+      if(code===3){o.atk+=adt*9;var sw=Math.sin(o.atk);A2.AR.sh.rotation.set(-1.4-sw*.9,0,.25);A2.AR.el.rotation.x=-.5+sw*.3;A2.spine.rotation.y+=sw*.25;}else o.atk=0;
       if(code===5){A2.AL.sh.rotation.set(-1.2,.5,-.2);A2.AL.el.rotation.x=-1.1;A2.AR.sh.rotation.set(-.5,0,.2);}}
-    faceAnim(A2,dt,time);finalizePose(A2);capeAnim(A2,time,o.mv,0);}}
+    faceAnim(A2,adt,time);finalizePose(A2);capeAnim(A2,time,o.mv,0);}}
 var netAnimCode=0;
 function netSend(){
   if(!NET.open||!NET.ws||NET.ws.readyState!==1)return;var now=performance.now();
@@ -2948,25 +2993,104 @@ function netSend(){
   if(!moved&&now-NET.lastSend<5000)return;
   NET.lastSend=now;NET.lastSent=s;try{NET.ws.send(JSON.stringify({t:"s",x:s[0],y:s[1],z:s[2],r:s[3],a:s[4]}));}catch(e){}}
 function netLook(){if(NET.open&&NET.ws)try{NET.ws.send(JSON.stringify({t:"look",name:P.name||"旅人",job:P.job,app:netAppStr()}));}catch(e){}}
-/* ---- chat ---- */
-function chatAppend(el){var log=$("chatLog");log.appendChild(el);while(log.children.length>40)log.removeChild(log.firstChild);log.scrollTop=log.scrollHeight;
-  setTimeout(function(){el.classList.add("old");},15000);}
+/* ---- notices (system lines; public chat is off) ---- */
+function chatAppend(el){var log=$("chatLog");log.appendChild(el);while(log.children.length>6)log.removeChild(log.firstChild);
+  setTimeout(function(){el.classList.add("old");setTimeout(function(){el.remove();},900);},6000);}
 function chatSys(text){var d=document.createElement("div");d.className="cl sys";d.textContent=text;chatAppend(d);}
-function chatLine(c,old){if(netMuted().indexOf(c.n)>=0)return;var d=document.createElement("div");d.className="cl"+(c.id===NET.id?" me":"");
-  var n=document.createElement("b");n.textContent=c.n+"：";d.appendChild(n);d.appendChild(document.createTextNode(c.m));d.dataset.name=c.n;
-  if(c.id!==NET.id)d.addEventListener("click",function(){if(d.querySelector("button"))return;var b=document.createElement("button");b.type="button";b.className="btn mute";b.textContent=c.n+" を非表示";
-    b.addEventListener("click",function(ev){ev.stopPropagation();var mu=netMuted();if(mu.indexOf(c.n)<0)mu.push(c.n);try{localStorage.setItem("lo-muted",JSON.stringify(mu));}catch(e){}
-      Array.prototype.slice.call($("chatLog").children).forEach(function(x){if(x.dataset.name===c.n)x.remove();});chatSys(c.n+" のチャットを非表示にしました");});d.appendChild(b);});
-  if(old)d.classList.add("old");chatAppend(d);}
-function chatOpen(on){var f=$("chatForm");f.hidden=!on;$("chatBox").classList.toggle("open",on);if(on){setTimeout(function(){$("chatIn").focus();},30);}else $("chatIn").blur();}
-$("openChat").addEventListener("click",function(){chatOpen($("chatForm").hidden);});
-$("chatForm").addEventListener("submit",function(e){e.preventDefault();var t=$("chatIn").value.trim();if(t&&NET.open&&NET.ws){try{NET.ws.send(JSON.stringify({t:"c",m:t.slice(0,80)}));}catch(er){}}$("chatIn").value="";chatOpen(false);});
-$("chatIn").addEventListener("keydown",function(e){if(e.key==="Escape"){e.preventDefault();chatOpen(false);}});
-addEventListener("keydown",function(e){if(state==="play"&&NET.open&&e.key==="Enter"&&!(e.target&&e.target.tagName==="INPUT")&&!dlg.open){e.preventDefault();chatOpen(true);}});
+/* ---- player id kept on this device (until accounts arrive) ---- */
+var MYID=null;
+function myId(){if(MYID)return MYID;var hex=function(n){var a=new Uint8Array(n);crypto.getRandomValues(a);return Array.prototype.map.call(a,function(x){return(x<16?"0":"")+x.toString(16);}).join("");};
+  try{var v=JSON.parse(localStorage.getItem("lo-id")||"null");if(v&&/^[0-9a-f]{16}$/.test(v.p)&&/^[0-9a-f]{32}$/.test(v.k))MYID=v;}catch(e){}
+  if(!MYID){MYID={p:hex(8),k:hex(16)};try{localStorage.setItem("lo-id",JSON.stringify(MYID));}catch(e){}}return MYID;}
+/* ---- friends & friend-only messages ---- */
+var SOC={ws:null,open:false,retry:0,timer:null,closing:false,friends:{},reqs:{},sent:{},unread:{},view:null,lastPing:0};
+try{SOC.unread=JSON.parse(localStorage.getItem("lo-unread")||"{}")||{};}catch(e){}
+function socSend(o){if(SOC.open&&SOC.ws&&SOC.ws.readyState===1){try{SOC.ws.send(JSON.stringify(o));return true;}catch(e){}}return false;}
+function socConnect(){
+  if(!ONLINE_URL||SOC.ws||!netWanted()||state!=="play")return;var id=myId(),ws;
+  try{ws=new WebSocket(ONLINE_URL.replace(/\/ws$/,"/social")+"?p="+id.p);}catch(e){return;}
+  SOC.ws=ws;SOC.closing=false;
+  ws.onopen=function(){ws.send(JSON.stringify({t:"hello",k:id.k,n:(P&&P.name)||"旅人"}));};
+  ws.onmessage=function(e){var m;try{m=JSON.parse(e.data);}catch(er){return;}socMsg(m);};
+  ws.onclose=function(ev){SOC.ws=null;SOC.open=false;netBadge();fRender();
+    if(ev&&ev.code===4003){chatSys("フレンド機能に接続できませんでした（ID不一致）");return;}
+    if(!SOC.closing&&state==="play"&&netWanted()){var w=Math.min(30000,2000*Math.pow(2,SOC.retry++));clearTimeout(SOC.timer);SOC.timer=setTimeout(function(){SOC.timer=null;socConnect();},w);}};
+  ws.onerror=function(){};}
+function socClose(){SOC.closing=true;clearTimeout(SOC.timer);SOC.timer=null;if(SOC.ws){try{SOC.ws.close();}catch(e){}}SOC.ws=null;SOC.open=false;}
+function dmLoad(){try{return JSON.parse(localStorage.getItem("lo-dm")||"{}")||{};}catch(e){return{};}}
+function dmPush(pid,line){var all=dmLoad(),a=all[pid]||[];a.push(line);while(a.length>60)a.shift();all[pid]=a;try{localStorage.setItem("lo-dm",JSON.stringify(all));}catch(e){}}
+function unreadSave(){try{localStorage.setItem("lo-unread",JSON.stringify(SOC.unread));}catch(e){}fBadge();}
+function fBadge(){var n=Object.keys(SOC.reqs).length;for(var k in SOC.unread)if(SOC.friends[k])n+=SOC.unread[k];var b=$("fBadge");b.hidden=!n;b.textContent=n>99?"99+":n;}
+function tagsRefresh(){for(var k in NET.others){var o=NET.others[k];if(o.tag)o.tag.classList.toggle("fr",!!(o.p&&SOC.friends[o.p]));}}
+function socMsg(m){
+  if(m.t==="welcome"){SOC.open=true;SOC.retry=0;SOC.friends={};SOC.reqs={};
+    (m.friends||[]).forEach(function(f){SOC.friends[f.p]={n:f.n,on:f.on};});(m.reqs||[]).forEach(function(r){SOC.reqs[r.p]={n:r.n};});
+    (m.mail||[]).forEach(function(d){dmPush(d.f,{me:0,m:d.m,ts:d.ts});SOC.unread[d.f]=(SOC.unread[d.f]||0)+1;});
+    if((m.mail||[]).length)chatSys("オフライン中にメッセージが "+m.mail.length+" 件届いています");
+    if(Object.keys(SOC.reqs).length)chatSys("フレンド申請が届いています");
+    unreadSave();tagsRefresh();}
+  else if(m.t==="req"){SOC.reqs[m.p]={n:m.n};chatSys(m.n+" からフレンド申請が届きました");}
+  else if(m.t==="sent"){SOC.sent[m.p]=1;chatSys("フレンド申請を送りました");}
+  else if(m.t==="reqgone"){delete SOC.reqs[m.p];}
+  else if(m.t==="fr"){SOC.friends[m.p]={n:m.n,on:m.on};delete SOC.reqs[m.p];delete SOC.sent[m.p];chatSys(m.n+" とフレンドになりました");tagsRefresh();}
+  else if(m.t==="frrm"){var f=SOC.friends[m.p];delete SOC.friends[m.p];delete SOC.unread[m.p];unreadSave();tagsRefresh();if(SOC.view===m.p)fShowList();if(f)chatSys(f.n+" とのフレンドを解除しました");}
+  else if(m.t==="on"){var g=SOC.friends[m.p];if(g){g.on=m.on;if(m.n)g.n=m.n;if(m.on)chatSys(g.n+" がオンラインになりました");}}
+  else if(m.t==="dm"){dmPush(m.f,{me:0,m:m.m,ts:m.ts});var h=SOC.friends[m.f];if(h&&m.n)h.n=m.n;
+    if(SOC.view===m.f&&!$("friendsModal").hidden){}else{SOC.unread[m.f]=(SOC.unread[m.f]||0)+1;chatSys("✉ "+m.n+"："+m.m);}unreadSave();}
+  else if(m.t==="dmok"){dmPush(m.to,{me:1,m:m.m,ts:m.ts});}
+  else if(m.t==="sys")chatSys(m.m);
+  fBadge();netBadge();fRender();}
+/* tap a name tag -> friend request */
+var TM={o:null,t:0};
+function tagMenu(o){if(!SOC.open){chatSys("フレンド機能に接続中です…");return;}
+  if(!o.p){chatSys("このプレイヤーは古いバージョンのため申請できません");return;}
+  TM.o=o;TM.t=performance.now();$("tmName").textContent=o.n;var b=$("tmBtn"),f=SOC.friends[o.p];
+  b.disabled=!!SOC.sent[o.p]&&!f;b.textContent=f?"メッセージを送る":SOC.reqs[o.p]?"申請を承認する":SOC.sent[o.p]?"申請済み":"フレンド申請";
+  var r=o.tag.getBoundingClientRect(),m=$("tagMenu");m.style.left=clamp(r.left+r.width/2,90,innerWidth-90)+"px";m.style.top=Math.max(80,r.top-4)+"px";m.hidden=false;}
+function tagMenuClose(){$("tagMenu").hidden=true;TM.o=null;}
+$("tmBtn").addEventListener("click",function(){var o=TM.o;if(!o)return;tagMenuClose();
+  if(SOC.friends[o.p]){friendsOpen(true);fShowChat(o.p);}else if(SOC.reqs[o.p])socSend({t:"acc",p:o.p});else socSend({t:"req",to:o.p});});
+addEventListener("pointerdown",function(e){if(!$("tagMenu").hidden&&!$("tagMenu").contains(e.target)&&performance.now()-TM.t>250)tagMenuClose();},true);
+setInterval(function(){if(TM.o&&(state!=="play"||!TM.o.tag||TM.o.tag.style.display==="none"))tagMenuClose();},500);
+/* friends panel */
+function friendsOpen(on){var m=$("friendsModal");if(on){if(dlg.open||!$("statsModal").hidden||!$("menuModal").hidden)return;m.hidden=false;paused=true;fShowList();}
+  else{m.hidden=true;paused=false;SOC.view=null;$("fIn").blur();}}
+function fShowList(){SOC.view=null;$("fListView").hidden=false;$("fChatView").hidden=true;$("fBack").hidden=true;$("fTitle").textContent="フレンド";fRender();}
+function fShowChat(pid){var f=SOC.friends[pid];if(!f)return;SOC.view=pid;$("fListView").hidden=true;$("fChatView").hidden=false;$("fBack").hidden=false;$("fTitle").textContent=f.n;
+  delete SOC.unread[pid];unreadSave();fRender();}
+function mkEl(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;}
+function fRender(){if($("friendsModal").hidden)return;
+  if(SOC.view){var log=$("fLog"),lines=dmLoad()[SOC.view]||[],f=SOC.friends[SOC.view];log.innerHTML="";
+    if(!lines.length)log.appendChild(mkEl("div","empty","まだメッセージはありません"));
+    lines.forEach(function(l){var d=mkEl("div","m"+(l.me?" me":""),l.m),tm=new Date(l.ts);d.appendChild(mkEl("small",null,(tm.getMonth()+1)+"/"+tm.getDate()+" "+tm.getHours()+":"+("0"+tm.getMinutes()).slice(-2)));log.appendChild(d);});
+    log.scrollTop=log.scrollHeight;$("fTitle").textContent=(f?f.n:"")+(f&&f.on?"（オンライン）":"（オフライン）");return;}
+  var rq=$("fReqs"),ks=Object.keys(SOC.reqs);rq.innerHTML="";$("fReqWrap").hidden=!ks.length;
+  ks.forEach(function(k){var r=mkEl("div","frow");r.appendChild(mkEl("span","nm",SOC.reqs[k].n));
+    var a=mkEl("button","btn gold","承認");a.type="button";a.addEventListener("click",function(){socSend({t:"acc",p:k});});
+    var d=mkEl("button","btn","拒否");d.type="button";d.addEventListener("click",function(){socSend({t:"dec",p:k});delete SOC.reqs[k];fBadge();fRender();});
+    r.append(a,d);rq.appendChild(r);});
+  var list=$("fList"),fs=Object.keys(SOC.friends).sort(function(a,b){return(SOC.friends[b].on?1:0)-(SOC.friends[a].on?1:0);});list.innerHTML="";
+  $("fCount").textContent=fs.length+" / 50";
+  if(!fs.length)list.appendChild(mkEl("p","fhint","まだフレンドはいません。"));
+  fs.forEach(function(k){var f=SOC.friends[k],r=mkEl("div","frow click");r.tabIndex=0;r.setAttribute("role","button");
+    r.appendChild(mkEl("span","dot"+(f.on?" on":"")));r.appendChild(mkEl("span","nm",f.n));r.appendChild(mkEl("span","st",f.on?"オンライン":"オフライン"));
+    if(SOC.unread[k])r.appendChild(mkEl("span","un",String(SOC.unread[k])));
+    r.addEventListener("click",function(){fShowChat(k);});r.addEventListener("keydown",function(e){if(e.key==="Enter")fShowChat(k);});list.appendChild(r);});
+  $("fState").textContent=SOC.open?"":"フレンド機能に接続中です…";}
+$("openChat").addEventListener("click",function(){friendsOpen($("friendsModal").hidden);});
+$("fClose").addEventListener("click",function(){friendsOpen(false);});
+$("fBack").addEventListener("click",fShowList);
+$("fForm").addEventListener("submit",function(e){e.preventDefault();var t=$("fIn").value.trim();if(!t||!SOC.view)return;
+  if(socSend({t:"dm",to:SOC.view,m:t.slice(0,80)}))$("fIn").value="";else chatSys("送信できませんでした（接続中）");});
+var fRmArm=0;
+$("fRemove").addEventListener("click",function(){var b=$("fRemove");if(performance.now()-fRmArm>3000){fRmArm=performance.now();b.textContent="もう一度押すと解除します";setTimeout(function(){b.textContent="フレンドを解除";},3000);return;}
+  fRmArm=0;b.textContent="フレンドを解除";if(SOC.view)socSend({t:"rm",p:SOC.view});});
 function onlineLabel(){$("mOnline").textContent="オンライン："+(!ONLINE_URL?"準備中":netWanted()?"オン":"オフ");}
 $("mOnline").addEventListener("click",function(){if(!ONLINE_URL)return;var on=!netWanted();try{localStorage.setItem("lo-online",on?"1":"0");}catch(e){}onlineLabel();if(on){NET.retry=0;netConnect();}else netClose();netBadge();});
 onlineLabel();
-setInterval(function(){if(state==="play"){if(!NET.ws&&netWanted()&&ONLINE_URL&&!NET.timer)netConnect();}else if(NET.ws)netClose();netBadge();},1000);
+setInterval(function(){if(state==="play"){if(!NET.ws&&netWanted()&&ONLINE_URL&&!NET.timer)netConnect();if(!SOC.ws&&netWanted()&&ONLINE_URL&&!SOC.timer)socConnect();
+    var now=performance.now();if(SOC.ws&&SOC.ws.readyState===1&&now-SOC.lastPing>25000){SOC.lastPing=now;try{SOC.ws.send("ping");}catch(e){}}}
+  else if(NET.ws||SOC.ws)netClose();netBadge();},1000);
 
 function goTitle(){clearProjs();setState("title");}
 $("btnStart").addEventListener("click",function(){renderSlots();setState("saves");});
@@ -3474,6 +3598,7 @@ function render(dt){
   sun.target.position.copy(fp);
   if(state==="title"||state==="saves")return;
   var scn=state==="play"?scene:stage;if(scn===scene)updateCull();
+  frameN++;if(!isTouch||gfx===2||frameN%2===0||state!=="play")renderer.shadowMap.needsUpdate=true;   /* phones: shadows every other frame */
   if(composer){renderPass.scene=scn;composer.render();}else renderer.render(scn,camera);
   pops.forEach(function(p){vtmp.copy(p.p);vtmp.y+=p.t*1.2;vtmp.project(camera);
     p.el.style.left=((vtmp.x+1)/2*innerWidth)+"px";p.el.style.top=((1-vtmp.y)/2*innerHeight)+"px";p.el.style.opacity=Math.max(0,1-p.t/.9);});
@@ -3497,15 +3622,16 @@ var GFX_NAMES=["低","中","高"],gfx=isTouch?1:2;
 try{var gs=localStorage.getItem("lo-gfx");if(gs!==null&&/^[012]$/.test(gs))gfx=+gs;}catch(e){}
 var dynRes=true,dynScale=1,dynT=0,dynN=0,dynCool=0;
 try{if(localStorage.getItem("lo-dynres")==="0")dynRes=false;}catch(e){}
-function gfxPR(){return dynScale*(gfx===2?Math.min(devicePixelRatio,2):gfx===1?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,1)*.8);}
+function gfxPR(){return dynScale*(gfx===2?Math.min(devicePixelRatio,2):gfx===1?Math.min(devicePixelRatio,isTouch?1.1:1.25):Math.min(devicePixelRatio,1)*.8);}
+if(isTouch)dynScale=.9;
 function applyGfx(){
   var gf=gfx===2?1:gfx===1?.5:.22;grassCells.forEach(function(im){im.count=Math.floor(im.userData.full*gf);});
-  GRASS_DIST=gfx===2?70:gfx===1?55:38;DRAW_DIST=gfx===2?260:gfx===1?190:130;SMALL_DIST=gfx===2?120:gfx===1?95:70;
+  GRASS_DIST=gfx===2?70:gfx===1?(isTouch?46:55):38;DRAW_DIST=gfx===2?260:gfx===1?(isTouch?170:190):130;SMALL_DIST=gfx===2?120:gfx===1?(isTouch?82:95):70;
   var ms=gfx===2?2048:1024;sun.castShadow=gfx>0;
   if(sun.shadow.mapSize.x!==ms){sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}
   if(composer&&composer.passes[1])composer.passes[1].enabled=gfx>0;
   camera.far=gfx===2?800:gfx===1?420:260;camera.updateProjectionMatrix();
-  LOD_NPC=gfx===2?28:gfx===1?22:15;LOD_ENEMY=gfx===2?35:gfx===1?28:20;
+  LOD_NPC=gfx===2?28:gfx===1?(isTouch?18:22):15;LOD_ENEMY=gfx===2?35:gfx===1?28:20;
   var b=document.getElementById("mGfx");if(b)b.textContent="画質："+GFX_NAMES[gfx]+(gfx===1?"（標準）":gfx===0?"（軽量）":"（高画質）");
   resize();}
 function setGfx(v){gfx=clamp(v,0,2);try{localStorage.setItem("lo-gfx",String(gfx));}catch(e){}applyGfx();}
@@ -3514,7 +3640,7 @@ $("mGfx").addEventListener("click",function(){setGfx(gfx===0?2:gfx-1);});
 var perfT=0,perfN=0,perfAsked=false;
 function dynResTick(raw){if(!dynRes||state!=="play"||paused)return;dynT+=raw;dynN++;dynCool-=raw;
   if(dynT<1.5)return;var fps=dynN/dynT;dynT=0;dynN=0;if(dynCool>0)return;var target=fpsCap===30?27:48;
-  if(fps<target-3&&dynScale>.6){dynScale=Math.max(.6,dynScale-.1);resize();dynCool=2;}
+  var lo=isTouch?.5:.6;if(fps<target-3&&dynScale>lo){dynScale=Math.max(lo,dynScale-.1);resize();dynCool=2;}
   else if(fps>target+8&&dynScale<1){dynScale=Math.min(1,dynScale+.1);resize();dynCool=4;}}
 function dynLabel(){$("mDyn").textContent="自動解像度："+(dynRes?"オン":"オフ");}
 $("mDyn").addEventListener("click",function(){dynRes=!dynRes;if(!dynRes){dynScale=1;resize();}try{localStorage.setItem("lo-dynres",dynRes?"1":"0");}catch(e){}dynLabel();});
