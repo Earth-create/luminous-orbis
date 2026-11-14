@@ -621,7 +621,7 @@ var MH={ok:false,body:null,prox:{},tex:{},HAIR:["short02","ponytail01","long01",
   function jget(name,cb){var url=MHA+name+".json";pending++;assetMgr.itemStart(url);
     fetch(url).then(function(r){if(!r.ok)throw new Error(r.status);return r.json();}).then(function(j){cb(j);pending--;assetMgr.itemEnd(url);MH.check();})
       .catch(function(e){console.warn("mh",name,e);MH.failed=true;assetMgr.itemError(url);assetMgr.itemEnd(url);});}
-  function ltx(file,srgb){var t=texLoader.load(MHA+file);if(srgb!==false)t.encoding=THREE.sRGBEncoding;t.anisotropy=Math.min(4,maxAniso);return t;}
+  function ltx(file,srgb){var t=texLoader.load(MHA+file);if(srgb!==false)t.encoding=THREE.sRGBEncoding;t.anisotropy=Math.min(8,maxAniso);return t;}
   jget("body",function(j){
     var b={nc:j.nc,base:deq(j.base,Int16Array,j.bs),src:dec(j.src,Uint16Array),uv:deq(j.uv,Uint16Array,1/65535),cuv:deq(j.cuv,Int16Array,j.cs),reg:dec(j.reg,Uint8Array),
       skI:dec(j.skI,Uint8Array),skW:dec(j.skW,Uint8Array),idx:dec(j.idx,Uint16Array),groups:j.groups,regions:j.regions,joints:j.joints,bones:j.bones,T:{},FT:{},blink:tdec(j.exp.blink)};
@@ -2029,14 +2029,24 @@ function finalizePose(A){
   A.clavR.rotation.set(0,0,clamp((-sr.x-1.1)*.14,0,.2)+clamp((sr.z-.4)*.2,0,.15));
   A.clavL.rotation.set(0,0,-(clamp((-sl.x-1.1)*.14,0,.2)+clamp((-sl.z-.4)*.2,0,.15)));
 }
+/* locomotion: amt 0..1 walk/jog, up to 1.35 sprint. Body leans in, arms pump with bent elbows,
+   knees lift, hips sway, the head steadies itself. */
 function walkAnim(A,amt,swingArms){
-  var sw=Math.sin(A.walkPh)*.65*amt;
-  A.LL.th.rotation.x+=sw;A.LR.th.rotation.x+=-sw;
-  A.LL.kn.rotation.x+=Math.max(0,Math.sin(A.walkPh+1.6))*.9*amt;A.LR.kn.rotation.x+=Math.max(0,Math.sin(A.walkPh+1.6+Math.PI))*.9*amt;
-  if(swingArms){A.AR.sh.rotation.x+=-sw*.4;A.AL.sh.rotation.x+=sw*.4;}
-  A.hips.position.y+=Math.abs(Math.cos(A.walkPh))*.05*amt;
-  A.spine.rotation.x+=amt*.08;A.spine.rotation.y+=Math.sin(A.walkPh)*.2*amt;A.hips.rotation.y-=Math.sin(A.walkPh)*.1*amt;
-  A.hips.rotation.z+=Math.sin(A.walkPh)*.04*amt;
+  var ph=A.walkPh,sn=Math.sin(ph),cs=Math.cos(ph),k=Math.min(1,amt),run=clamp((amt-.55)/.8,0,1);
+  var sw=sn*(.5+.22*run)*k;
+  A.LL.th.rotation.x+=sw-.06*run*k;A.LR.th.rotation.x+=-sw-.06*run*k;
+  var lift=.85+.75*run;
+  A.LL.kn.rotation.x+=(Math.max(0,Math.sin(ph+1.6))*lift+.12)*k;A.LR.kn.rotation.x+=(Math.max(0,Math.sin(ph+1.6+Math.PI))*lift+.12)*k;
+  /* double-frequency bob: lowest when a foot lands */
+  A.hips.position.y+=(Math.abs(cs)-.62)*(.055+.05*run)*k-.025*run*k;
+  A.hips.rotation.z+=sn*.05*k;A.hips.rotation.y-=sn*(.1+.04*run)*k;
+  var lean=(.1+.16*run)*k;A.spine.rotation.x+=lean;A.hips.rotation.x+=.05*run*k;
+  A.spine.rotation.y+=sn*(.2+.08*run)*k;A.spine.rotation.z-=sn*.035*k;
+  A.head.rotation.x-=lean*.55;A.head.rotation.y-=sn*.14*k;A.head.rotation.z+=sn*.02*k;
+  if(swingArms){var as=sn*(.42+.38*run)*k;
+    A.AR.sh.rotation.x+=-as-.05*run*k;A.AL.sh.rotation.x+=as-.05*run*k;
+    A.AR.sh.rotation.z+=.06*run*k;A.AL.sh.rotation.z-=.06*run*k;
+    A.AR.el.rotation.x-=(.35+.75*run)*k+Math.max(0,-sn)*.25*k;A.AL.el.rotation.x-=(.35+.75*run)*k+Math.max(0,sn)*.25*k;}
 }
 function faceAnim(A,dt,t){
   A.blinkT-=dt;if(A.blinkT<0){A.blink+=dt/.13;if(A.blink>=1){A.blink=0;A.blinkT=2+Math.random()*3.5;}}
@@ -2086,7 +2096,7 @@ function jobIdle(A,t,w){if(w<=0)return;var o=A.out,br=Math.sin(t*1.8);
     A.LL.th.rotation.x-=.06*w;A.LR.th.rotation.x+=.06*w;}}
 /* run style per job, s = sprint amount 0..1, m = move amount */
 function jobRun(A,m,s){var o=A.out,k=m;if(k<=0)return;
-  if(o==="thief"){A.spine.rotation.x+=(.1+.22*s)*k;A.AR.sh.rotation.x+=.55*s*k;A.AL.sh.rotation.x+=.55*s*k;A.AR.sh.rotation.z+=.25*s*k;A.AL.sh.rotation.z-=.25*s*k;A.head.rotation.x-=.15*s*k;}
+  if(o==="thief"){A.spine.rotation.x+=(.04+.1*s)*k;A.AR.sh.rotation.x+=.55*s*k;A.AL.sh.rotation.x+=.55*s*k;A.AR.sh.rotation.z+=.25*s*k;A.AL.sh.rotation.z-=.25*s*k;A.head.rotation.x-=.15*s*k;}
   else if(o==="warrior"){A.spine.rotation.x+=.06*k;A.AR.sh.rotation.x-=.2*k;A.AR.el.rotation.x-=.25*k;A.hips.position.y-=.02*s*k;}
   else if(o==="archer"){A.AL.sh.rotation.x-=.25*k;A.spine.rotation.x+=.05*k;}
   else if(o==="mage"){A.AL.sh.rotation.x-=.15*k;A.AL.sh.rotation.z-=.2*k;A.spine.rotation.x+=.04*k;}
@@ -3523,10 +3533,14 @@ function updatePlayer(dt){
     var mvW=Math.max(moveAmt,A.mvS||0);A.walkPh+=dt*(mvW>.04?(sprint?11+spd*1.2:8+spd)*Math.max(.55,mvW):0);
     if(airY>0){A.LL.th.rotation.x=-.7;A.LL.kn.rotation.x=1.1;A.LR.th.rotation.x=-.25;A.LR.kn.rotation.x=.6;A.AR.sh.rotation.x-=.5;A.AL.sh.rotation.x-=.5;A.AR.sh.rotation.z+=.25;A.AL.sh.rotation.z-=.25;}
     else{var wa=lerp(A.mvS||0,moveAmt,.35);walkAnim(A,sprint?Math.min(1.35,wa*1.35):wa,act.name==="idle"&&!guarding&&P.job!=="mage");}
-    if(sprint){A.spine.rotation.x+=.22;A.hips.rotation.x+=.06;}
+    if(sprint){A.spine.rotation.x+=.08;}
   }
   if(landT>0){landT-=dt;var lk=Math.sin(Math.min(1,landT/.18)*Math.PI);A.hips.position.y-=lk*.12;A.LL.kn.rotation.x+=lk*.5;A.LR.kn.rotation.x+=lk*.5;}
-  A.mvS=lerp(A.mvS||0,moveAmt,Math.min(1,dt*7));A.spS=lerp(A.spS||0,sprint?1:0,Math.min(1,dt*6));
+  var pMv=A.mvS||0;A.mvS=lerp(pMv,moveAmt,Math.min(1,dt*7));A.spS=lerp(A.spS||0,sprint?1:0,Math.min(1,dt*6));
+  /* lean into turns, forward when setting off, back when stopping */
+  var yr=angD(A.lastFace==null?facing:A.lastFace,facing)/Math.max(dt,1e-3);A.lastFace=facing;
+  A.turnS=lerp(A.turnS||0,clamp(yr,-8,8)*A.mvS,Math.min(1,dt*8));A.accS=lerp(A.accS||0,clamp((A.mvS-pMv)/Math.max(dt,1e-3),-4,4),Math.min(1,dt*6));
+  if(act.name==="idle"&&airY<=0){var tl=clamp(A.turnS*.035*(1+A.spS*.6),-.22,.22);A.hips.rotation.z+=tl;A.spine.rotation.z+=tl*.5;A.spine.rotation.x+=clamp(A.accS*.05,-.12,.14);}
   if(act.name==="idle"&&!guarding&&airY<=0){jobIdle(A,time,1-Math.min(1,A.mvS*1.6));jobRun(A,A.mvS,A.spS);}
   var pk=act.name==="attack"?"a"+act.combo:act.name==="idle"?(guarding?"g":airY>0?"j":"i"):act.name;
   poseBlend(A,pk,dt,act.name==="attack"?.07:act.name==="dodge"?.06:pk==="j"?.1:.16);
@@ -3727,18 +3741,23 @@ function render(dt){
   pops.forEach(function(p){vtmp.copy(p.p);vtmp.y+=p.t*1.2;vtmp.project(camera);
     p.el.style.left=((vtmp.x+1)/2*innerWidth)+"px";p.el.style.top=((1-vtmp.y)/2*innerHeight)+"px";p.el.style.opacity=Math.max(0,1-p.t/.9);});
 }
-var composer=null,renderPass=null;
+var composer=null,renderPass=null,gradePass=null;
 if(THREE.EffectComposer&&THREE.UnrealBloomPass&&THREE.GammaCorrectionShader){
   try{
     composer=new THREE.EffectComposer(renderer);
     renderPass=new THREE.RenderPass(scene,camera);composer.addPass(renderPass);
-    var bloomP=new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.55,.5,.88),bloomSet=bloomP.setSize.bind(bloomP);bloomP.setSize=function(w,h){bloomSet(Math.max(2,Math.round(w/2)),Math.max(2,Math.round(h/2)));};composer.addPass(bloomP);
-    composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
-    composer.addPass(new THREE.ShaderPass({uniforms:{tDiffuse:{value:null}},
+    var bloomP=new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.55,.5,.88),bloomSet=bloomP.setSize.bind(bloomP);var bk=isTouch?3:2;bloomP.setSize=function(w,h){bloomSet(Math.max(2,Math.round(w/bk)),Math.max(2,Math.round(h/bk)));};composer.addPass(bloomP);
+    /* one final pass: sharpen (undoes the soft look of a lowered render scale) + linear->sRGB + colour grade */
+    gradePass=new THREE.ShaderPass({uniforms:{tDiffuse:{value:null},px:{value:new THREE.Vector2(1/innerWidth,1/innerHeight)},sharp:{value:isTouch?.42:.25}},
       vertexShader:"varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
-      fragmentShader:["uniform sampler2D tDiffuse;varying vec2 vUv;","void main(){vec3 c=texture2D(tDiffuse,vUv).rgb;float l=dot(c,vec3(.2126,.7152,.0722));",
+      fragmentShader:["uniform sampler2D tDiffuse;uniform vec2 px;uniform float sharp;varying vec2 vUv;",
+        "vec3 srgb(vec3 x){return LinearTosRGB(vec4(x,1.)).rgb;}",
+        "void main(){vec3 c0=srgb(texture2D(tDiffuse,vUv).rgb);",
+        "vec3 nb=srgb(texture2D(tDiffuse,vUv+vec2(px.x,0.)).rgb)+srgb(texture2D(tDiffuse,vUv-vec2(px.x,0.)).rgb)+srgb(texture2D(tDiffuse,vUv+vec2(0.,px.y)).rgb)+srgb(texture2D(tDiffuse,vUv-vec2(0.,px.y)).rgb);",
+        "vec3 mn=min(c0,nb*.25),mx=max(c0,nb*.25);vec3 c=clamp(c0+(c0*4.-nb)*sharp*.25,mn*.85,mx*1.15+.02);",
+        "float l=dot(c,vec3(.2126,.7152,.0722));",
         "c=mix(vec3(l),c,.86);c=(c-.5)*1.09+.5;c+=vec3(-.012,.004,.018)*(1.-l)+vec3(.024,.008,-.018)*l;",
-        "vec2 q=vUv-.5;c*=1.-dot(q,q)*.8;gl_FragColor=vec4(clamp(c,0.,1.),1.);}"].join("\n")}));
+        "vec2 q=vUv-.5;c*=1.-dot(q,q)*.8;gl_FragColor=vec4(clamp(c,0.,1.),1.);}"].join("\n")});composer.addPass(gradePass);
   }catch(err){composer=null;}
 }
 /* ---------- graphics quality (0 low, 1 mid, 2 high) ---------- */
@@ -3746,12 +3765,12 @@ var GFX_NAMES=["低","中","高"],gfx=isTouch?1:2;
 try{var gs=localStorage.getItem("lo-gfx");if(gs!==null&&/^[012]$/.test(gs))gfx=+gs;}catch(e){}
 var dynRes=true,dynScale=1,dynT=0,dynN=0,dynCool=0;
 try{if(localStorage.getItem("lo-dynres")==="0")dynRes=false;}catch(e){}
-function gfxPR(){return dynScale*(gfx===2?Math.min(devicePixelRatio,2):gfx===1?Math.min(devicePixelRatio,isTouch?1.1:1.25):Math.min(devicePixelRatio,1)*.8);}
-if(isTouch)dynScale=.9;
+function gfxPR(){return dynScale*(gfx===2?Math.min(devicePixelRatio,2):gfx===1?Math.min(devicePixelRatio,isTouch?1.35:1.25):Math.min(devicePixelRatio,1)*.8);}
+
 function applyGfx(){
-  var gf=gfx===2?1:gfx===1?.5:.22;grassCells.forEach(function(im){im.count=Math.floor(im.userData.full*gf);});
+  var gf=gfx===2?1:gfx===1?(isTouch?.38:.5):.22;grassCells.forEach(function(im){im.count=Math.floor(im.userData.full*gf);});
   GRASS_DIST=gfx===2?70:gfx===1?(isTouch?46:55):38;DRAW_DIST=gfx===2?260:gfx===1?(isTouch?170:190):130;SMALL_DIST=gfx===2?120:gfx===1?(isTouch?82:95):70;
-  var ms=gfx===2?2048:1024;sun.castShadow=gfx>0;
+  var ms=gfx===2?2048:isTouch?768:1024;sun.castShadow=gfx>0;
   if(sun.shadow.mapSize.x!==ms){sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}
   if(composer&&composer.passes[1])composer.passes[1].enabled=gfx>0;
   camera.far=gfx===2?800:gfx===1?420:260;camera.updateProjectionMatrix();
@@ -3773,7 +3792,7 @@ function perfWatch(raw){if(perfAsked||gfx===0||state!=="play"||paused)return;per
   if(perfT>6){var fps=perfN/perfT;perfT=0;perfN=0;if(fps<24){perfAsked=true;$("gfxAsk").hidden=false;}}}
 $("gfxYes").addEventListener("click",function(){$("gfxAsk").hidden=true;setGfx(gfx-1);});
 $("gfxNo").addEventListener("click",function(){$("gfxAsk").hidden=true;});
-function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();applyViewOffset();var pr=gfxPR();renderer.setPixelRatio(pr);renderer.setSize(innerWidth,innerHeight);if(composer){composer.setPixelRatio(pr);composer.setSize(innerWidth,innerHeight);}}
+function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();applyViewOffset();var pr=gfxPR();renderer.setPixelRatio(pr);renderer.setSize(innerWidth,innerHeight);if(composer){composer.setPixelRatio(pr);composer.setSize(innerWidth,innerHeight);}if(gradePass)gradePass.uniforms.px.value.set(1/Math.max(1,Math.round(innerWidth*pr)),1/Math.max(1,Math.round(innerHeight*pr)));}
 addEventListener("resize",resize);
 applyGfx();
 document.addEventListener("visibilitychange",function(){if(document.hidden&&state==="play")saveGame(true);});
