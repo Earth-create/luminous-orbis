@@ -58,6 +58,7 @@ body.shot .hud,body.shot #touch,body.shot #tipBox,body.shot #gfxAsk{display:none
 #netBadge{position:static;display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:6px 10px;border-radius:99px;background:rgba(14,12,9,.6);border:1px solid var(--line);color:var(--text);margin-right:2px}
 #netBadge::before{content:"";width:8px;height:8px;border-radius:50%;background:#888}
 #netBadge.on::before{background:#5fd068}#netBadge.wait::before{background:#e8c477}
+#speedFx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;display:none}body:not([data-state="play"]) #speedFx,body.shot #speedFx{display:none!important}
 #tags{position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden}body:not([data-state="play"]) #tags{display:none}
 .ntag{position:absolute;left:0;top:0;transform:translate(-50%,-100%);font-size:13px;font-weight:700;color:#f3e6c8;text-shadow:0 0 3px #000,0 1px 2px #000;white-space:nowrap;pointer-events:auto;cursor:pointer;padding:6px 10px;margin-top:-6px;will-change:transform}
 .ntag.fr{color:#9fe0a8}.ntag.fr::before{content:"★ ";font-size:11px}
@@ -2032,21 +2033,22 @@ function finalizePose(A){
 /* locomotion: amt 0..1 walk/jog, up to 1.35 sprint. Body leans in, arms pump with bent elbows,
    knees lift, hips sway, the head steadies itself. */
 function walkAnim(A,amt,swingArms){
-  var ph=A.walkPh,sn=Math.sin(ph),cs=Math.cos(ph),k=Math.min(1,amt),run=clamp((amt-.55)/.8,0,1);
-  var sw=sn*(.5+.22*run)*k;
-  A.LL.th.rotation.x+=sw-.06*run*k;A.LR.th.rotation.x+=-sw-.06*run*k;
-  var lift=.85+.75*run;
+  var ph=A.walkPh,sn=Math.sin(ph),cs=Math.cos(ph),k=Math.min(1,amt),run=clamp((amt-.35)/.75,0,1),spr=clamp((amt-1)/.35,0,1);
+  var sw=sn*(.5+.3*run+.18*spr)*k;
+  A.LL.th.rotation.x+=sw-.08*run*k;A.LR.th.rotation.x+=-sw-.08*run*k;
+  var lift=.85+.85*run+.4*spr;
   A.LL.kn.rotation.x+=(Math.max(0,Math.sin(ph+1.6))*lift+.12)*k;A.LR.kn.rotation.x+=(Math.max(0,Math.sin(ph+1.6+Math.PI))*lift+.12)*k;
   /* double-frequency bob: lowest when a foot lands */
-  A.hips.position.y+=(Math.abs(cs)-.62)*(.055+.05*run)*k-.025*run*k;
+  /* walking: highest over the planted foot; running: highest mid-stride (both feet off the ground) */
+  A.hips.position.y+=lerp((Math.abs(cs)-.62)*.055,(Math.abs(sn)-.45)*(.09+.05*spr),run)*k-.03*run*k;
   A.hips.rotation.z+=sn*.05*k;A.hips.rotation.y-=sn*(.1+.04*run)*k;
-  var lean=(.1+.16*run)*k;A.spine.rotation.x+=lean;A.hips.rotation.x+=.05*run*k;
+  var lean=(.1+.18*run+.1*spr)*k;A.spine.rotation.x+=lean;A.hips.rotation.x+=.05*run*k;
   A.spine.rotation.y+=sn*(.2+.08*run)*k;A.spine.rotation.z-=sn*.035*k;
   A.head.rotation.x-=lean*.55;A.head.rotation.y-=sn*.14*k;A.head.rotation.z+=sn*.02*k;
-  if(swingArms){var as=sn*(.42+.38*run)*k;
+  if(swingArms){var as=sn*(.42+.45*run+.3*spr)*k;
     A.AR.sh.rotation.x+=-as-.05*run*k;A.AL.sh.rotation.x+=as-.05*run*k;
     A.AR.sh.rotation.z+=.06*run*k;A.AL.sh.rotation.z-=.06*run*k;
-    A.AR.el.rotation.x-=(.35+.75*run)*k+Math.max(0,-sn)*.25*k;A.AL.el.rotation.x-=(.35+.75*run)*k+Math.max(0,sn)*.25*k;}
+    A.AR.el.rotation.x-=(.35+.85*run)*k+Math.max(0,-sn)*.3*k;A.AL.el.rotation.x-=(.35+.85*run)*k+Math.max(0,sn)*.3*k;}
 }
 function faceAnim(A,dt,t){
   A.blinkT-=dt;if(A.blinkT<0){A.blink+=dt/.13;if(A.blink>=1){A.blink=0;A.blinkT=2+Math.random()*3.5;}}
@@ -3007,7 +3009,7 @@ $("resetStats").addEventListener("click",function(){
 function setState(s){
   state=s;document.body.dataset.state=s;running=s==="play";
   $("scrTitle").hidden=s!=="title";$("scrSaves").hidden=s!=="saves";$("scrCreate").hidden=s!=="create";$("scrJob").hidden=s!=="job";
-  fill.intensity=0;
+  fill.intensity=0;if(camera.fov!==58){camera.fov=58;camera.updateProjectionMatrix();}
   player.visible=s!=="title"&&s!=="saves";
   if(s==="create"||s==="job"){stage.add(player);player.position.set(0,STAGE_Y,0);}else if(s==="play"){scene.add(player);}
   if(s==="job"&&P)showStart(P.job);else if(s!=="job"){SHOW=null;sfxClear();}
@@ -3545,7 +3547,10 @@ function updatePlayer(dt){
   var pk=act.name==="attack"?"a"+act.combo:act.name==="idle"?(guarding?"g":airY>0?"j":"i"):act.name;
   poseBlend(A,pk,dt,act.name==="attack"?.07:act.name==="dodge"?.06:pk==="j"?.1:.16);
   faceAnim(A,dt,time);finalizePose(A);
-  capeAnim(A,time,moveAmt,act.name==="dodge"?.6:0);
+  capeAnim(A,time,Math.min(1.1,moveAmt*(1+(A.spS||0)*.15)),act.name==="dodge"?.6:0);
+  /* 5: a puff of dust at each footfall */
+  if(act.name==="idle"&&airY<=0&&moveAmt>.35){var fs=Math.sin(A.walkPh)>0;if(A.lastFoot!==undefined&&fs!==A.lastFoot){var sp2=A.spS||0;
+    fxDust(player.position.x-Math.sin(facing)*.2,player.position.y+.06,player.position.z-Math.cos(facing)*.2,sp2>.5?4:2,.45+sp2*.45);}A.lastFoot=fs;}
   collide(player.position,.45);
   if(airY>0||jumpV!==0){jumpV-=22*dt;airY+=jumpV*dt;if(airY<=0){airY=0;jumpV=0;landT=.18;}}
   player.position.y=groundY(player.position.x,player.position.z)+airY;
@@ -3702,10 +3707,27 @@ function ambient(dt){
     else beacon.visible=false;}
   else beacon.visible=false;
 }
-var camTarget=new THREE.Vector3(),camPos=new THREE.Vector3(),vtmp=new THREE.Vector3();
+var camTarget=new THREE.Vector3(),camPos=new THREE.Vector3(),vtmp=new THREE.Vector3(),camFol=new THREE.Vector3();
+/* 7: faint wind streaks at the screen edges while dashing */
+var SL={cv:null,g:null,lines:[],a:0,acc:0};
+function speedLines(k,dt){SL.a=lerp(SL.a,k>.3?k:0,Math.min(1,dt*5));
+  if(!SL.cv){if(SL.a<.02)return;SL.cv=document.createElement("canvas");SL.cv.id="speedFx";SL.cv.setAttribute("aria-hidden","true");document.body.appendChild(SL.cv);SL.g=SL.cv.getContext("2d");}
+  var cv=SL.cv;if(SL.a<.02){if(cv.style.display!=="none"){cv.style.display="none";SL.g.clearRect(0,0,cv.width,cv.height);}return;}
+  cv.style.display="block";SL.acc+=dt;if(SL.acc<1/30)return;var st=SL.acc;SL.acc=0;
+  var W=Math.round(innerWidth*.5),Hh=Math.round(innerHeight*.5);if(cv.width!==W||cv.height!==Hh){cv.width=W;cv.height=Hh;}
+  var g=SL.g,cx=W/2,cy=Hh*.46,R=Math.hypot(cx,cy);g.clearRect(0,0,W,Hh);
+  while(SL.lines.length<40)SL.lines.push({a:Math.random()*6.283,r:.55+Math.random()*.4,v:.9+Math.random()*1.2,l:.12+Math.random()*.22,w:1.4+Math.random()*2});
+  g.lineCap="round";
+  for(var i=0;i<SL.lines.length;i++){var L=SL.lines[i];L.r+=L.v*st;if(L.r>1.15){L.r=.5+Math.random()*.15;L.a=Math.random()*6.283;}
+    var r0=L.r*R,r1=(L.r+L.l)*R,ca=Math.cos(L.a),sa=Math.sin(L.a),fade=clamp((L.r-.5)/.15,0,1);
+    g.strokeStyle="rgba(255,252,240,"+(.6*SL.a*fade)+")";g.lineWidth=L.w;g.beginPath();g.moveTo(cx+ca*r0,cy+sa*r0);g.lineTo(cx+ca*r1,cy+sa*r1);g.stroke();}}
 function render(dt){
   if(state==="play"){
-    camTarget.set(player.position.x,player.position.y+1.55,player.position.z);
+    var spK=A?(A.spS||0)*(A.mvS||0):0;
+    if(camFol.distanceTo(player.position)>6)camFol.copy(player.position);else camFol.lerp(player.position,Math.min(1,dt*(14-spK*5)));
+    camTarget.set(camFol.x,player.position.y+1.55,camFol.z);
+    var fv=58+spK*8;if(Math.abs(camera.fov-fv)>.05){camera.fov=lerp(camera.fov,fv,Math.min(1,dt*4));camera.updateProjectionMatrix();}
+    speedLines(spK,dt);
     var cpch=Math.cos(cam.pitch);
     camera.position.set(camTarget.x+Math.sin(cam.yaw)*cam.dist*cpch,camTarget.y+Math.sin(cam.pitch)*cam.dist,camTarget.z+Math.cos(cam.yaw)*cam.dist*cpch);
     var cbk=camBlock(camTarget.x,camTarget.y,camTarget.z,camera.position.x,camera.position.y,camera.position.z);camBlk=cbk<camBlk?cbk:lerp(camBlk,cbk,Math.min(1,dt*2.5));
